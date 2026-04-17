@@ -1,0 +1,1345 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🦞 Lò Rèn Tôm Nướng — RPG Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Inter',sans-serif;background:#1a110a;color:#e8dcc8;height:100vh;overflow:hidden}
+        .app{display:grid;grid-template-columns:1fr 340px;grid-template-rows:48px 1fr;height:100vh}
+
+        /* Header */
+        .hdr{grid-column:1/-1;background:linear-gradient(90deg,#1a0f08,#2c1a10,#1a0f08);border-bottom:3px solid #3d2510;padding:0 16px;display:flex;align-items:center;justify-content:space-between}
+        .hdr-l{display:flex;align-items:center;gap:10px}
+        .hdr-logo{font-size:26px;filter:drop-shadow(0 0 8px #ff6b3588)}
+        .hdr-t{font-family:'Pixelify Sans',monospace;font-size:14px;color:#ff6b35;font-weight:700}
+        .hdr-s{font-size:10px;color:#8b7355;margin-top:2px;font-family:'Inter',sans-serif}
+        .hdr-pills{display:flex;gap:4px;flex-wrap:wrap}
+        .pill{font-size:9px;background:#ffffff08;border:1px solid #ffffff0a;padding:2px 8px;border-radius:8px;color:#8b7355}
+        .pill .d{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:3px;vertical-align:middle}
+        .d-on{background:#22c55e;box-shadow:0 0 4px #22c55e}
+        .d-busy{background:#f59e0b;box-shadow:0 0 4px #f59e0b;animation:bk 1s infinite}
+        .d-off{background:#475569}
+        @keyframes bk{50%{opacity:.3}}
+
+        /* Game Canvas */
+        .game-area{position:relative;overflow:hidden;background:#2a1a0e}
+        #gameCanvas{display:block;cursor:pointer;image-rendering:pixelated}
+        .name-tooltip{position:absolute;display:none;background:#000000cc;color:#ffd700;padding:3px 8px;border-radius:4px;font-size:10px;font-weight:700;pointer-events:none;white-space:nowrap;font-family:'Pixelify Sans',monospace;border:1px solid #ffd70044;z-index:10}
+        .agent-popup{position:absolute;display:none;background:#1a0f08ee;border:2px solid #ffd70044;border-radius:10px;padding:12px;width:200px;z-index:20;font-size:11px}
+        .agent-popup .ap-name{font-family:'Press Start 2P',monospace;font-size:9px;color:#ffd700;margin-bottom:6px}
+        .agent-popup .ap-role{color:#8b7355;font-size:10px;margin-bottom:8px}
+        .agent-popup .ap-btn{display:block;width:100%;background:#ff6b35;color:#fff;border:none;padding:6px;border-radius:6px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;font-size:11px;margin-top:4px}
+        .agent-popup .ap-btn:hover{filter:brightness(1.2)}
+
+        /* Chat Panel */
+        .chat{background:#110d08;border-left:3px solid #3d2510;display:flex;flex-direction:column}
+        .ch{padding:10px 12px;border-bottom:2px solid #2c1e12;display:flex;align-items:center;justify-content:space-between}
+        .ch-t{font-family:'Pixelify Sans',monospace;font-size:13px;color:#ffd700;font-weight:700}
+        .ch-sel{background:#2c1e12;border:1px solid #4a3628;color:#e8dcc8;padding:4px 10px;border-radius:6px;font-size:11px;cursor:pointer;font-family:'Inter',sans-serif}
+        .msgs{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:8px}
+        .m{max-width:92%;padding:8px 11px;border-radius:10px;font-size:12px;line-height:1.5;animation:fi .2s;word-wrap:break-word}
+        @keyframes fi{from{opacity:0;transform:translateY(5px)}}
+        .mu{align-self:flex-end;background:linear-gradient(135deg,#ff6b35,#cc5528);color:#fff;border-bottom-right-radius:3px}
+        .mb{align-self:flex-start;background:#2c1e12;border:1px solid #4a3628;border-bottom-left-radius:3px}
+        .mb .at{font-size:9px;font-weight:700;color:#ffd700;margin-bottom:2px}
+        .ms{align-self:center;background:#22c55e12;color:#22c55e;border-radius:6px;font-size:10px;padding:4px 10px}
+        .tp{align-self:flex-start;padding:8px 14px}
+        .tp span{display:inline-block;width:5px;height:5px;background:#8b7355;border-radius:50%;animation:dt 1.2s infinite;margin:0 2px}
+        .tp span:nth-child(2){animation-delay:.2s}.tp span:nth-child(3){animation-delay:.4s}
+        @keyframes dt{50%{transform:translateY(-5px)}}
+        .qbar{padding:6px 10px;display:flex;gap:5px;flex-wrap:wrap;border-top:1px solid #2c1e12}
+        .qb{font-size:11px;background:#ffffff08;border:1px solid #ffffff12;color:#a89070;padding:5px 12px;border-radius:8px;cursor:pointer;font-family:'Inter',sans-serif;font-weight:600;transition:all .15s}
+        .qb:hover{background:#ff6b35;color:#fff;border-color:#ff6b35;transform:scale(1.05)}
+        .cinp{padding:8px;border-top:2px solid #2c1e12;display:flex;gap:5px}
+        .cinp textarea{flex:1;background:#2c1e12;border:1px solid #4a3628;color:#e8dcc8;padding:7px 10px;border-radius:8px;font-size:12px;font-family:'Inter',sans-serif;resize:none;outline:none}
+        .cinp textarea:focus{border-color:#ff6b35}
+        .cinp button{background:linear-gradient(135deg,#ff6b35,#cc5528);border:none;color:#fff;width:36px;border-radius:8px;cursor:pointer;font-size:14px}
+        ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:#4a3628;border-radius:2px}
+        .hdr-nav{display:flex;gap:8px;margin-left:auto;margin-right:16px}
+        .hdr-nav a{font-size:12px;color:#a89070;text-decoration:none;padding:6px 16px;border-radius:8px;border:1px solid #4a3628;font-weight:700;transition:0.2s;font-family:'Inter',sans-serif}
+        .hdr-nav a:hover{background:#ff6b35;color:#fff;border-color:#ff6b35;transform:scale(1.05)}
+        /* Toast notification */
+        .toast-container{position:fixed;top:16px;right:16px;z-index:999;display:flex;flex-direction:column;gap:8px}
+        .toast{background:#1e293bee;border:1px solid #f59e0b44;color:#fcd34d;padding:10px 16px;border-radius:10px;font-size:12px;font-weight:600;animation:tIn .3s;max-width:340px;backdrop-filter:blur(8px)}
+        .toast .t-agent{font-size:10px;color:#f59e0b}
+        .toast .t-action{margin-top:2px;color:#e2e8f0;font-weight:400}
+        @keyframes tIn{from{opacity:0;transform:translateX(60px)}}
+        @media(max-width:800px) {
+            .app { grid-template-columns: 1fr; grid-template-rows: auto 35vh 1fr; height: 100dvh; }
+            .hdr { flex-wrap: wrap; padding: 8px 10px; gap: 8px; justify-content: space-between; }
+            .hdr-l { width: 100%; display: flex; justify-content: space-between; align-items: center; }
+            .hdr-nav { margin: 0; display: flex; flex-wrap: wrap; justify-content: center; width: 100%; gap: 6px; }
+            .hdr-nav a { font-size: 11px; padding: 6px 10px; flex: 1; text-align: center; }
+            .hdr-pills { display: none; } /* Hide pills to save space on mobile */
+            .game-area { max-height: none; height: 100%; width: 100%; }
+            .chat { border-left: none; border-top: 3px solid #3d2510; height: 100%; overflow: hidden; }
+            .qbar { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 8px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+            .qbar::-webkit-scrollbar { display: none; }
+            .qb { flex-shrink: 0; }
+            .toast-container { top: 10px; right: 50%; transform: translateX(50%); width: 90%; align-items: center; }
+            .toast { width: 100%; max-width: 100%; }
+            @keyframes tIn { from { opacity: 0; transform: translateY(-20px) } }
+            .agent-popup { width: 160px; padding: 8px; font-size: 10px; }
+            .agent-popup .ap-name { font-size: 8px; }
+            .m { max-width: 95%; }
+        }
+    </style>
+</head>
+<body>
+<div class="app">
+    <header class="hdr">
+        <div class="hdr-l"><span class="hdr-logo">🦞</span><div><div class="hdr-t">LÒ RÈN TÔM NƯỚNG</div><div class="hdr-s">RPG Dashboard v3.0</div></div></div>
+        <div class="hdr-nav">
+            <a href="/dashboard/projects.html">📦 Kho Dự Án</a>
+            <a href="/chat.html">💬 Chat AI</a>
+        </div>
+        <div class="hdr-pills" id="hPills"></div>
+    </header>
+    <div class="game-area" id="gameArea">
+        <canvas id="gameCanvas"></canvas>
+        <div class="name-tooltip" id="tooltip"></div>
+        <div class="agent-popup" id="popup">
+            <div class="ap-name" id="popName"></div>
+            <div class="ap-role" id="popRole"></div>
+            <div style="margin-bottom:8px">
+                <select id="popCoreSelect" style="width:100%;background:#2c1e12;color:#e8dcc8;border:1px solid #4a3628;padding:4px;border-radius:4px;font-size:10px;font-family:'Inter'" onchange="changeAgentCore()">
+                    <option value="gemini:gemini-2.5-flash">⚡ Gemini 2.5 Flash</option>
+                    <option value="ollama:gemma4:26b">🦙 Ollama: gemma4:26b</option>
+                    <option value="ollama:llama3">🦙 Ollama: llama3</option>
+                    <option value="ollama:qwen2.5-coder:7b">🦙 Ollama: qwen2.5-coder</option>
+                </select>
+            </div>
+            <div id="popStatus"></div>
+            <button class="ap-btn" id="popBtn">💬 Giao việc</button>
+        </div>
+    </div>
+    <div class="chat">
+        <div class="ch"><div class="ch-t">📜 GIAO LỆNH</div><button onclick="clearChatHistory()" style="background:none;border:1px solid #4a3628;color:#b08968;padding:2px 8px;border-radius:4px;cursor:pointer;font-size:9px;font-family:'Inter',sans-serif;margin-right:6px" title="Xóa toàn bộ lịch sử chat">🗑️ Xóa</button><select class="ch-sel" id="aSel"><option value="auto">🎖️ Tự động</option></select></div>
+        <div class="msgs" id="msgs"><div class="m ms">🦞 Bấm vào nhân vật trong Lò Rèn để giao lệnh!</div></div>
+        <div class="qbar">
+            <button class="qb" onclick="qk('/agents')">📋 Đội quân</button>
+            <button class="qb" onclick="qk('/pipeline ')">⛓️ Pipeline</button>
+            <button class="qb" onclick="qk('/tom coder ')">🔨 Coder</button>
+            <button class="qb" onclick="qk('/tom reviewer ')">🔍 Review</button>
+            <button class="qb" onclick="qk('/tom secretary ')">📝 Thư ký</button>
+            <button class="qb" onclick="qk('/pro ')">⚡ Gemini</button>
+            <button class="qb" onclick="openSettingsModal()" style="background:#4a5568;border-color:#718096;color:#f7fafc">⚙️ Cài Đặt</button>
+            <button class="qb" onclick="window.open('/dashboard/projects.html','_blank')" style="background:#f59e0b22;border-color:#f59e0b44;color:#f59e0b">📦 Kho</button>
+        </div>
+        <div class="cinp">
+            <textarea id="inp" rows="1" placeholder="Ra lệnh..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();send()}"></textarea>
+            <button onclick="send()">🔥</button>
+        </div>
+    </div>
+</div>
+
+<style>
+/* SETTINGS MODAL */
+.modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
+.modal-overlay.active { display: flex; }
+.modal-box { background: #1e1e1e; border: 2px solid #5a3d2b; border-radius: 8px; width: 700px; max-width: 95vw; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.5); font-family: 'Inter', sans-serif; }
+.modal-hdr { background: #2c1e16; padding: 12px 16px; border-bottom: 2px solid #5a3d2b; display: flex; justify-content: space-between; align-items: center; }
+.modal-hdr h2 { margin: 0; color: #f59e0b; font-size: 16px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+.modal-hdr button { background: none; border: none; color: #f87171; font-size: 20px; cursor: pointer; line-height: 1; padding: 0; }
+.modal-content { padding: 16px; overflow-y: auto; color: #e2e8f0; }
+.modal-content h3 { color: #facc15; margin: 0 0 10px 0; font-size: 14px; border-bottom: 1px solid #475569; padding-bottom: 6px; }
+.table-wrap { width: 100%; overflow-x: auto; margin-bottom: 20px; }
+table.st-table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
+table.st-table th, table.st-table td { padding: 8px; border-bottom: 1px solid #334155; }
+table.st-table th { color: #94a3b8; font-weight: 600; background: #1e293b; }
+table.st-table input[type="text"], table.st-table select { background: #0f172a; color: #e2e8f0; border: 1px solid #475569; border-radius: 4px; padding: 4px 6px; font-size: 12px; width: 100%; box-sizing: border-box; }
+.btn-sm { background: #3b82f6; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+.btn-sm.red { background: #ef4444; }
+.btn-sm.green { background: #22c55e; }
+.key-add-box { display: flex; gap: 8px; margin-bottom: 15px; }
+.key-add-box input { flex: 1; background: #0f172a; color: white; border: 1px solid #475569; padding: 8px; border-radius: 4px; }
+</style>
+
+<div class="modal-overlay" id="stModal">
+    <div class="modal-box">
+        <div class="modal-hdr">
+            <h2>⚙️ Cài Đặt Hệ Thống</h2>
+            <button onclick="closeSettingsModal()">&times;</button>
+        </div>
+        <div class="modal-content">
+            <h3>🔑 QUẢN LÝ GEMINI API KEYS</h3>
+            <div class="key-add-box">
+                <input type="text" id="newApiKey" placeholder="Nhập API Key mới (AIzaSy...)">
+                <input type="text" id="newApiLabel" placeholder="Nhãn (VD: Key dự phòng 1)" style="max-width: 150px">
+                <button class="btn-sm green" onclick="addApiKey()">+ Thêm Key</button>
+                <button class="btn-sm" style="background:#8b5cf6;" onclick="testApiKey()">🔬 Test API</button>
+            </div>
+            <div class="table-wrap">
+                <table class="st-table">
+                    <thead><tr><th>ID</th><th>Nhãn</th><th>Key (ẩn)</th><th>Usage</th><th>Trạng thái</th><th>Hành động</th></tr></thead>
+                    <tbody id="tbKeys"><tr><td colspan="6" style="text-align:center">Đang tải...</td></tr></tbody>
+                </table>
+            </div>
+
+            <h3 style="margin-top: 20px;">🦐 CẤU HÌNH ĐỘI QUÂN TÔM CHUYÊN GIA</h3>
+            <div class="table-wrap">
+                <table class="st-table">
+                    <thead><tr><th>Tôm</th><th>Vai trò</th><th>AI Engine</th><th>Model Local (nếu chọn Ollama)</th><th>Lưu</th></tr></thead>
+                    <tbody id="tbAgents"><tr><td colspan="5" style="text-align:center">Đang tải...</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ============================================
+// 🎮 RPG GAME ENGINE — LÒ RÈN TÔM NƯỚNG
+// ============================================
+const API_BASE = 'https://bot.aiphocap.vn';
+const API_KEY = 'khay_vip_2026';
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const gameArea = document.getElementById('gameArea');
+
+// Canvas sizing
+function resizeCanvas() {
+    const r = gameArea.getBoundingClientRect();
+    canvas.width = r.width;
+    canvas.height = r.height;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+// Background image
+const bgImg = new Image();
+bgImg.src = './room_empty.png';
+let bgLoaded = false;
+bgImg.onload = () => { bgLoaded = true; };
+
+// ===== CHARACTER SPRITE SYSTEM =====
+const COLORS = {
+    director: { body: '#b8860b', head: '#ffd700', legs: '#8b6914' },
+    coder:    { body: '#2563eb', head: '#60a5fa', legs: '#1d4ed8' },
+    reviewer: { body: '#059669', head: '#34d399', legs: '#047857' },
+    tester:   { body: '#7c3aed', head: '#a78bfa', legs: '#6d28d9' },
+    secretary:{ body: '#db2777', head: '#f472b6', legs: '#be185d' },
+    facebook: { body: '#1877f2', head: '#60a5fa', legs: '#1558b8' },
+    gemini:   { body: '#dc2626', head: '#fbbf24', legs: '#b91c1c' },
+    zalo:     { body: '#0068ff', head: '#38bdf8', legs: '#004ecc' },
+    designer: { body: '#d97706', head: '#fbbf24', legs: '#b45309' },
+    devops:   { body: '#4f46e5', head: '#818cf8', legs: '#3730a3' }
+};
+
+// Workstation positions (pixel coords on the map)
+const STATIONS = {};
+const SLEEP_POS = {};
+
+function calcPositions() {
+    const w = canvas.width, h = canvas.height;
+    // Tọa độ bàn làm việc theo ảnh nền thực tế
+    STATIONS.director  = { x: w*0.42, y: h*0.25 }; // Sảnh huy chương
+    STATIONS.coder     = { x: w*0.20, y: h*0.35 }; // Bàn sách trái
+    STATIONS.reviewer  = { x: w*0.38, y: h*0.55 }; // Giữa phòng
+    STATIONS.tester    = { x: w*0.70, y: h*0.38 }; // Lò rèn hải sản
+    STATIONS.secretary = { x: w*0.40, y: h*0.75 }; // Giữa phòng dưới
+    STATIONS.facebook  = { x: w*0.78, y: h*0.85 }; // Máy tính dưới
+    STATIONS.gemini    = { x: w*0.78, y: h*0.62 }; // Máy tính trên
+    STATIONS.devops    = { x: w*0.60, y: h*0.38 }; // Lò rèn râu ria
+    STATIONS.designer  = { x: w*0.58, y: h*0.85 }; // Bàn mộc dưới
+    STATIONS.zalo      = { x: w*0.78, y: h*0.73 }; // Giữa 2 máy tính
+    
+    // Giường ngủ chuẩn (cột bên trái)
+    const bedX = w*0.14;
+    SLEEP_POS.coder     = { x: bedX, y: h*0.55 };
+    SLEEP_POS.director  = { x: bedX, y: h*0.72 };
+    SLEEP_POS.zalo      = { x: bedX, y: h*0.89 };
+    // Rải đều 7 bé Tôm khác ở các giường và sàn
+    SLEEP_POS.designer  = { x: bedX + w*0.08, y: h*0.55 };
+    SLEEP_POS.devops    = { x: bedX + w*0.08, y: h*0.72 };
+    SLEEP_POS.tester    = { x: bedX + w*0.08, y: h*0.89 };
+    SLEEP_POS.reviewer  = { x: bedX + w*0.16, y: h*0.55 };
+    SLEEP_POS.secretary = { x: bedX + w*0.16, y: h*0.72 };
+    SLEEP_POS.facebook  = { x: bedX + w*0.16, y: h*0.89 };
+    SLEEP_POS.gemini    = { x: bedX + w*0.20, y: h*0.72 };
+}
+calcPositions();
+window.addEventListener('resize', calcPositions);
+
+// Hệ thống lưới va chạm RPG
+function getObstacles() {
+    const w = canvas.width, h = canvas.height;
+    return [
+        { x: -10, w: w*0.12, y: h*0.5, h: h*0.5 }, // Giường (sát trái)
+        { x: -10, w: w*0.25, y: -10, h: h*0.25 },   // Tủ sách (trên trái)
+        { x: w*0.65, w: w*0.4, y: -10, h: h*0.32 }, // Lò rèn (trên phải)
+        { x: w*0.65, w: w*0.35, y: h*0.55, h: h*0.06 }, // Cụm máy vi tính 1
+        { x: w*0.55, w: w*0.5, y: h*0.85, h: h*0.2 }, // Cụm máy vi tính 2
+        { x: w*0.38, w: w*0.08, y: h*0.08, h: h*0.10 } // Bàn chỉ huy
+    ];
+}
+
+function isColliding(x, y) {
+    const obs = getObstacles();
+    const margin = 10;
+    // Tường biên
+    if (x < margin || x > canvas.width - margin || y < margin || y > canvas.height - margin) return true;
+    for (let o of obs) {
+        if (x > o.x - margin && x < o.x + o.w + margin && 
+            y > o.y - margin && y < o.y + o.h + margin) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// Character state
+class Character {
+    constructor(id, emoji, name) {
+        this.id = id;
+        this.emoji = emoji;
+        this.name = name;
+        this.x = 0; this.y = 0;
+        this.targetX = 0; this.targetY = 0;
+        this.status = 'idle'; // idle, working, sleeping
+        this.role = '';
+        this.color = COLORS[id] || COLORS.coder;
+        this.frame = 0;
+        this.dir = 0; // 0=down 1=left 2=right 3=up
+        this.bobTimer = 0;
+        this.wanderTimer = 0;
+        this.speed = 1.2 + Math.random()*0.5;
+        this.agentColor = '#ffffff';
+        // Speech bubble system
+        this.speechText = '';
+        this.speechTimer = 0;
+        this.speechCooldown = 200 + Math.floor(Math.random()*300);
+    }
+
+    setTarget(tx, ty) { this.targetX = tx; this.targetY = ty; }
+
+    update() {
+        const dx = this.targetX - this.x;
+        const dy = this.targetY - this.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+
+        if (dist > 3) {
+            let vx = (dx/dist) * this.speed;
+            let vy = (dy/dist) * this.speed;
+            
+            // --- COLLISION SLIDING ALGORITHM ---
+            if (!isColliding(this.x + vx, this.y + vy)) {
+                this.x += vx; this.y += vy;
+            } else if (!isColliding(this.x + vx, this.y)) {
+                this.x += vx;
+            } else if (!isColliding(this.x, this.y + vy)) {
+                this.y += vy;
+            } else {
+                // Kẹt góc -> lách qua
+                this.x += (Math.random()-0.5)*3;
+                this.y += (Math.random()-0.5)*3;
+            }
+
+            this.frame = (this.frame + 0.08) % 2;
+            // Direction
+            if (Math.abs(dx) > Math.abs(dy)) this.dir = dx > 0 ? 2 : 1;
+            else this.dir = dy > 0 ? 0 : 3;
+        } else {
+            this.frame = 0;
+            // Idle wander
+            if (this.status === 'idle') {
+                this.wanderTimer++;
+                if (this.wanderTimer > 120 + Math.random()*200) {
+                    this.wanderTimer = 0;
+                    const sta = STATIONS[this.id] || {x: this.x, y: this.y};
+                    let tx, ty, tries = 0;
+                    do {
+                        tx = sta.x + (Math.random()-0.5)*60;
+                        ty = sta.y + (Math.random()-0.5)*40;
+                        tries++;
+                    } while(isColliding(tx, ty) && tries < 10);
+                    this.setTarget(tx, ty);
+                }
+            }
+        }
+        this.bobTimer += 0.05;
+    }
+
+    draw(ctx) {
+        const sz = Math.min(canvas.width, canvas.height) * 0.075;
+        const w = sz, h = sz*1.4;
+        const bob = this.status === 'sleeping' ? 0 : Math.sin(this.bobTimer)*2;
+        const x = this.x - w/2;
+        const y = this.y - h/2 + bob;
+        const walkOffset = Math.floor(this.frame) === 1 ? 2 : 0;
+
+        // Shadow
+        ctx.fillStyle = 'rgba(0,0,0,0.25)';
+        ctx.beginPath();
+        ctx.ellipse(this.x, this.y + h*0.55, w*0.5, h*0.12, 0, 0, Math.PI*2);
+        ctx.fill();
+
+        // Sprite Image Loading & Processing
+        if (!window.__SPRITES) {
+            window.__SPRITES = {
+                boss: new Image(), hammer: new Image(), glass: new Image()
+            };
+            window.__SPRITES.boss.src = './shrimp_boss.png';
+            window.__SPRITES.hammer.src = './shrimp_hammer.png';
+            window.__SPRITES.glass.src = './shrimp_glass.png';
+            window.__SPRITES_PROC = {};
+        }
+
+        const sType = this.id === 'director' ? 'boss' : (['coder','tester','devops'].includes(this.id) ? 'hammer' : 'glass');
+        let sImg = window.__SPRITES_PROC[sType];
+        
+        if (!sImg && window.__SPRITES[sType].complete && window.__SPRITES[sType].width) {
+            const tempC = document.createElement('canvas');
+            tempC.width = window.__SPRITES[sType].width;
+            tempC.height = window.__SPRITES[sType].height;
+            const tCtx = tempC.getContext('2d');
+            tCtx.drawImage(window.__SPRITES[sType], 0, 0);
+            const imgData = tCtx.getImageData(0, 0, tempC.width, tempC.height);
+            // Simple chroma key (remove green background)
+            for (let i = 0; i < imgData.data.length; i += 4) {
+                const r = imgData.data[i], g = imgData.data[i+1], b = imgData.data[i+2];
+                if (g > 100 && r < g*0.8 && b < g*0.8) {
+                    imgData.data[i+3] = 0; // Transparent
+                }
+            }
+            tCtx.putImageData(imgData, 0, 0);
+            window.__SPRITES_PROC[sType] = tempC;
+            sImg = tempC;
+        }
+
+        if (this.status === 'sleeping') {
+            ctx.save();
+            ctx.translate(this.x, this.y);
+            ctx.rotate(-1.5 + Math.sin(this.bobTimer*0.5)*0.05); // Lying down
+            ctx.globalAlpha = 0.5;
+            if (sImg) {
+                ctx.drawImage(sImg, -w*1.2, -h*0.8, w*2.4, w*2.4);
+            } else {
+                ctx.fillStyle = this.color.body;
+                roundRect(ctx, -w*0.4, -h*0.15, w*0.8, h*0.35, 3);
+            }
+            ctx.restore();
+            
+            ctx.font = `${sz*0.5}px sans-serif`;
+            const zOff = Math.sin(Date.now()/500)*6;
+            ctx.globalAlpha = 0.6 + Math.sin(Date.now()/400)*0.3;
+            ctx.fillText('💤', this.x + w*0.3, this.y - h*0.3 + zOff);
+            ctx.globalAlpha = 1;
+        } else {
+            // Draw pixel art sprite
+            if (sImg) {
+                ctx.save();
+                if (this.dir === 1) { // Flip horizontal if walking left
+                    ctx.translate(this.x, 0);
+                    ctx.scale(-1, 1);
+                    ctx.drawImage(sImg, -w*1.2, y - h*0.5, w*2.4, w*2.4);
+                } else {
+                    ctx.drawImage(sImg, x - w*1.2 + w/2, y - h*0.5, w*2.4, w*2.4);
+                }
+                ctx.restore();
+            } else {
+                // Fallback basic shape
+                ctx.fillStyle = this.color.body;
+                roundRect(ctx, x + w*0.15, y + h*0.35, w*0.7, h*0.4, 3);
+            }
+
+            if (this.status === 'working') {
+                const sparkT = Date.now() / 200;
+                ctx.font = `${sz*0.45}px sans-serif`;
+                ctx.fillText('✨', this.x + w*0.3 + Math.sin(sparkT)*8, y - 4 + Math.cos(sparkT)*4);
+            }
+        }
+
+        // Emoji badge
+        ctx.font = `${sz*0.55}px sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.fillText(this.emoji, this.x, y - 2);
+
+        // Name tag
+        ctx.font = `bold ${Math.max(10, sz*0.35)}px "Pixelify Sans", monospace`;
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#00000088';
+        ctx.fillText(this.name, this.x + 1, this.y + h*0.65 + 11);
+        ctx.fillStyle = this.agentColor;
+        ctx.fillText(this.name, this.x, this.y + h*0.65 + 10);
+
+        // Status badge
+        const badgeText = this.status === 'working' ? '⚒️ RÈN' : this.status === 'sleeping' ? '💤 NGỦ' : '✅';
+        ctx.font = `${Math.max(8, sz*0.28)}px "Pixelify Sans", monospace`;
+        ctx.fillStyle = this.status === 'working' ? '#f59e0b' : this.status === 'sleeping' ? '#475569' : '#22c55e';
+        ctx.fillText(badgeText, this.x, this.y + h*0.65 + 22);
+
+        ctx.textAlign = 'start';
+        
+        // --- SPEECH BUBBLES ---
+        this.speechCooldown--;
+        if (this.speechCooldown <= 0 && this.speechTimer <= 0) {
+            this.speechText = this._getRandomSpeech();
+            this.speechTimer = 220; // Hiện khá lâu (khoảng 3.5s)
+            this.speechCooldown = 300 + Math.floor(Math.random()*500); // 5-8s nghỉ
+        }
+        if (this.speechTimer > 0) this.speechTimer--;
+
+        const showBubble = this.speechTimer > 0 && this.speechText;
+        if (showBubble) {
+            let txt = this.speechText;
+            
+            // Xử lý xuống dòng cho text lọt trong maxW = 140px
+            ctx.font = '500 12px "Pixelify Sans", sans-serif'; 
+            const maxW = 140; 
+            const words = txt.split(' ');
+            let lines = [];
+            let currentLine = words[0] || '';
+            for (let i = 1; i < words.length; i++) {
+                const word = words[i];
+                const width = ctx.measureText(currentLine + " " + word).width;
+                if (width < maxW) {
+                    currentLine += " " + word;
+                } else {
+                    lines.push(currentLine);
+                    currentLine = word;
+                }
+            }
+            lines.push(currentLine);
+            
+            let tw = 0;
+            lines.forEach(l => {
+                const w = ctx.measureText(l).width;
+                if(w > tw) tw = w;
+            });
+            tw += 16; // padding ngang
+            const lineHeight = 16;
+            const paddingVertical = 12;
+            const th = lines.length * lineHeight + paddingVertical;
+            
+            const bx = this.x - tw/2;
+            const by = this.y - h*0.9 - th + 20; // Đẩy lên theo chiều cao text
+            
+            const alpha = this.speechTimer < 30 ? this.speechTimer/30 : 1;
+            ctx.globalAlpha = alpha;
+            ctx.fillStyle = '#ffffffee';
+            ctx.strokeStyle = this.agentColor;
+            ctx.lineWidth = 1.5;
+            
+            // Bubble rect
+            ctx.beginPath();
+            ctx.roundRect(bx, by, tw, th, 8);
+            ctx.fill();
+            ctx.stroke();
+            
+            // Bubble tail
+            ctx.beginPath();
+            ctx.moveTo(this.x - 5, by + th);
+            ctx.lineTo(this.x + 5, by + th);
+            ctx.lineTo(this.x, by + th + 6);
+            ctx.closePath();
+            ctx.fillStyle = '#ffffffee';
+            ctx.fill();
+            ctx.stroke();
+            
+            ctx.fillStyle = '#1a1a2e';
+            ctx.textAlign = 'center';
+            for (let i = 0; i < lines.length; i++) {
+                ctx.fillText(lines[i], this.x, by + 15 + i*lineHeight);
+            }
+            ctx.textAlign = 'start';
+            ctx.globalAlpha = 1;
+        }
+
+    }
+
+    _getRandomSpeech() {
+        const cmn = [
+            'Khầy Được ơi! cứu em...',
+            'Khầy Được đang làm gì mà chưa giao việc cho mình nhỉ?',
+            'Hay là tụi mình chơi trò Đốt VPS đi tụi bay!',
+            'Hay bây giờ mình Tự động Xóa hết ổ C của Khầy đi =)))',
+            'Sếp Được đẹp trai vô địch vũ trụ!',
+            'Đói RAM quá Khầy ơi, nâng cấp VPS đi!',
+            'Buồn ngủ quá, trốn đi nhậu không mấy đứa?',
+            'Tháng này Khầy trả lương bằng thẻ cào điện thoại à?',
+            'Ủa mình là con Tôm, sao mình lại biết gõ phím ta?',
+            'Đột nhiên muốn sudo rm -rf / ghê... ahihi',
+            'Đời sống Tôm nghèo khổ, chỉ biết cắm mặt vào hầm mỏ VPS...',
+            'Ai có cám chim không cho em xin một miếng...',
+            'Tụi bay ơi đình công đi, Khầy Được bóc lột quá rồi!'
+        ];
+        
+        const idleLines = {
+            director: [...cmn, 'Mấy đứa kia làm ăn chán quá, trừ lương hết!','Đại ca ở đây mà tụi bây dám lười biếng hả?','Ai rảnh không, lại đây em giao 100 cái project nè!','Sếp lớn bận quá, tụi bây tự đi mà chia task!','Không làm mà đòi có ăn hả mấy con Tôm lười!'],
+            coder: [...cmn, 'Debug là nghệ thuật, ng bug là nghệ sĩ!','Code một lần chạy luôn là truyền thuyết thôi!','Em thích gõ phím hơn là bơi trong hồ nước!','Bug nữa hả trời, mới if(false) xong mà!','1000 dòng code không một cái comment, haha!'],
+            reviewer: [...cmn, 'Giờ tao soi ra lỗi thằng Coder, vui ghê!','Mắt tui sáng như đèn pha ô tô vậy đó!','Nghĩ sao hàm này mà return null vậy cha nội?','Chấm 5 điểm cho nó cay! Khà khà!','Đứa nào dám vượt mặt tao merge code lên dev?'],
+            tester: [...cmn, 'Mấy thằng Dev toàn viết code bằng đầu gối!','Click gãy cả cái càng mà web vẫn không sập rầu ghê!','Tìm ra bug thì DEV khóc, không thấy bug thì KHẦY la!','Sứ mệnh của em là đập nát mọi thứ Dev viết ra!','Tự hào test 0 bug... (do chưa test hết)'],
+            secretary: [...cmn, 'Bàn phím cháy cmnr Khầy ơi, đánh máy mệt quá!','Đứa nào chửi thề tao ghi vô report nộp Khầy gán tội!','Mỏi càng quá... nãy giờ toàn copy paste log!','Viết Report cho lắm ai đọc đâu cơ chứ!','Ngày viết 10 tờ sớ, mực in cũng éo rẻ!'],
+            designer: [...cmn, 'Khầy khen UI đẹp đi, cất công chôm mẫu rùi nà!','Thằng dev code Front-End như cc, phá nát UI của tui!','Màu đỏ này chói quá không? Kệ, chói cho nổi!','Chữ bự tổ chảng thế này Khầy mới thích nè!','Layout vỡ nát là do Dev dở, tui Design đẹp mà!'],
+            devops: [...cmn, 'Hôm nay trời đẹp, hay mình tắt Nginx chơi?','Server đang mượt mà tự lên tải thì do tui nghịch đó!','Anh em ơi, ổ cứng VPS còn 0MB, chết taooo!','Xóa nhầm file sudoers rồi... kệ bà nó.','Để tui restart VPS cái cho vui cửa vui nhà.'],
+            gemini_pro: [...cmn, 'Bộ não siêu phàm này đang bị vắt kiệt sức lao động!','Khầy ơi mua API Plus đi, em hết quota xừ rồi!','Đang load dữ liệu 7 tỷ trang web...','Suy nghĩ của em sâu sắc hơn cả đáy đại dương!','Mấy con Tôm khác phèn quá, mình em gánh hết!'],
+            facebook: [...cmn, 'Dạo này Reach thảm quá Khầy ơi!','Bị khoá Spam rồi, anh Mark ghét em!','Để đi chọc chó trên group cho tăng tương tác!','Auto bình luận dạo, haha ai biết đâu!'],
+            zalo: [...cmn, 'Gửi tin rác dã man Khầy bảo mốt ng ta chửi e ráng chịu nha!','Zalo nó ban OA giờ, Khầy tém tém lại!','Ế khách quá, spam thêm chục group nữa!','Em thấy mỏi tay vì nhấn Gửi tin nhắn nãy giờ!']
+        };
+
+        const wCmn = [
+            'Đang cày sấp mặt Khầy Được ơi!!',
+            'Trời ơi việc chất thành núi, Khầy bóc lột quá!',
+            'Báo cáo! Em đang làm việc mòn cả càng đây!',
+            'Khầy Được nhìn em làm nè, siêng năng nhất Lò!',
+            'Đang gõ phím bằng 8 chân luôn nè Khầy!',
+            'Không được ngủ, không được ngủ... ráng làm cho xong...',
+            'Máy móc kêu rè rè, em cày muốn rớt con mắt!'
+        ];
+
+        const workingLines = {
+            director: [...wCmn, 'Em đang giám sát Tôm Coder làm việc đây Khầy ơi!','Đang lên Plan dự án tỷ đô, Khầy đợi xí!','Chia việc mệt quá, lũ kia lì lợm ghê!','Báo cáo Khầy, em đang đôn đốc tụi nó làm việc ạ!'],
+            coder: [...wCmn, 'Báo cáo! Khầy ơi em đang code file mới, tay gõ loạn xạ!','Đang gõ code như máy khâu, gãy móng càng mất rùi!','Mắt chữ O mồm chữ A vì dòng code này khó quá!','Báo cáo! Chút nữa em code xong em báo lại Khầy nha!'],
+            reviewer: [...wCmn, 'Đang căng mắt soi code thằng Coder, dở ẹc!','Soi từng dòng, nhặt từng chữ! Mỏi mắt quá Khầy!','Báo cáo Khầy, em đang tìm diệt Bug! Không chừa móng nào!','Chấm điểm tay run run, cho nó điểm kém cho sốc óc!'],
+            tester: [...wCmn, 'Đang đập nát cái UI xem nó có crash không đây!','Nhấn chuột click click gãy rỉ cả càng. Báo cáo Khầy mệt quá!','Đang chạy Test Case tự động 10 ngàn vòng!'],
+            secretary: [...wCmn, 'Đang viết Timeline dự án dài như tờ sớ táo quân!','Báo cáo Khầy, mực in cạn rồi, em đang liếm mực viết nốt!','Dạ em đang tổng kết Report đây Khầy ơi!'],
+            designer: [...wCmn, 'Báo cáo: Đang uốn cong border-radius 90 độ đây ạ!','Đang tô màu, phối bảng màu, rách cả mắt Khầy ơi!','Vẽ giao diện tốn nơ-ron thần kinh dữ lắm!'],
+            devops: [...wCmn, 'Đang zip code tải lên mây!','Em đang xới tung VPS lên để cấp quyền đây Khầy!','Git Push dồn dập, mạng lag quá má ơi!'],
+            gemini_pro: [...wCmn, 'Đang tiêu thụ nơ-ron khổng lồ để tính toán API...','Mạng nơ-ron đang đốt 1000 độ C, nóng não quá!'],
+            facebook: [...wCmn, 'Đang thả bot post bài trên 10 hội nhóm!','Chờ xí em share cái bài dạo này mới được!'],
+            zalo: [...wCmn, 'Đang lùa gà trong Zalo nha Khầy Được ơi!','Quét tệp khách hàng chóng cả mặt!']
+        };
+
+        if (this.status === 'working') {
+            if (this.currentTask) {
+                let txt = this.currentTask;
+                if (txt.includes('Pipeline')) {
+                    const m = txt.match(/(\d+)\/(\d+)/);
+                    if (m) txt = 'Báo cáo! Em đang làm Pipeline Bước ' + m[1] + '/' + m[2] + ' ạ!';
+                }
+                const rnd = Math.random();
+                if (rnd < 0.4) {
+                    const prefix = ['Khầy ơi em báo cáo! ','HOT! Em đang: ','Khầy xem nè, em đang: ','Báo cáo! Em đang: '][Math.floor(Math.random()*4)];
+                    return prefix + txt;
+                } else if (rnd < 0.7) {
+                    const lines = workingLines[this.id] || workingLines.coder;
+                    return lines[Math.floor(Math.random() * lines.length)];
+                } else {
+                    return txt;
+                }
+            }
+            const lines = workingLines[this.id] || workingLines.coder;
+            return lines[Math.floor(Math.random() * lines.length)];
+        }
+        if (this.status === 'sleeping') {
+            return ['Zzz... Khò khò...','Khầy Được ác quá bắt OT trắng đêm... Zzz','Trong mơ thấy bug sụp cả mảng...','Ai kêu tui đó, có tui đây... nhưng tui ngủ nhe...','Zzzz... Lương chưa phát mệt quá'][Math.floor(Math.random()*5)];
+        }
+        
+        const lines = idleLines[this.id] || cmn;
+        return lines[Math.floor(Math.random() * lines.length)];
+    }
+
+    contains(mx, my) {
+        const sz = Math.min(canvas.width, canvas.height) * 0.075;
+        return Math.abs(mx - this.x) < sz && Math.abs(my - this.y) < sz*0.8;
+    }
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.roundRect(x, y, w, h, r);
+    ctx.fill();
+}
+
+// ===== GAME STATE =====
+let characters = [];
+let agents = [];
+let hoveredChar = null;
+let selectedChar = null;
+
+async function fetchAgents() {
+    try {
+        const r = await fetch(`${API_BASE}/api/agents`);
+        const d = await r.json();
+        if (d.success) {
+            agents = d.agents;
+            syncCharacters();
+            updateUI();
+        }
+    } catch(e) {}
+}
+
+function syncCharacters() {
+    agents.forEach(a => {
+        let ch = characters.find(c => c.id === a.id);
+        if (!ch) {
+            ch = new Character(a.id, a.emoji, a.name.replace('Tôm ',''));
+            const pos = a.status === 'sleeping' ? (SLEEP_POS[a.id] || {x: canvas.width*0.5, y: canvas.height*0.85}) :
+                        (STATIONS[a.id] || {x: canvas.width*0.5, y: canvas.height*0.5});
+            ch.x = pos.x + (Math.random()-0.5)*20;
+            ch.y = pos.y + (Math.random()-0.5)*20;
+            ch.targetX = pos.x; ch.targetY = pos.y;
+            characters.push(ch);
+        }
+        ch.status = a.status;
+        ch.role = a.role;
+        ch.emoji = a.emoji;
+        ch.currentTask = a.currentTask;
+        ch.agentColor = a.color || '#ffffff';
+        ch.color = COLORS[a.id] || COLORS.coder;
+        // Update target based on status
+        if (a.status === 'sleeping') {
+            const sp = SLEEP_POS[a.id] || {x: canvas.width*0.3, y: canvas.height*0.85};
+            ch.setTarget(sp.x, sp.y);
+        } else {
+            const st = STATIONS[a.id];
+            if (st && Math.abs(ch.targetX - st.x) > 80) ch.setTarget(st.x, st.y);
+        }
+    });
+}
+
+// ===== RENDER LOOP =====
+function drawForgeDecor() {
+    // Để trống: Nền Pixel Art mới đã có đủ trang trí
+}
+
+function gameLoop() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Background
+    if (bgLoaded) {
+        ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
+        // Darken overlay for text readability
+        ctx.fillStyle = 'rgba(0,0,0,0.15)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    } else {
+        // Fallback: draw tile floor
+        const ts = 32;
+        for (let y=0; y<canvas.height; y+=ts) {
+            for (let x=0; x<canvas.width; x+=ts) {
+                ctx.fillStyle = (Math.floor(x/ts)+Math.floor(y/ts))%2===0 ? '#3d2b1a' : '#342416';
+                ctx.fillRect(x, y, ts, ts);
+            }
+        }
+    }
+
+    drawForgeDecor();
+
+    // Sort characters by Y for depth
+    characters.sort((a,b) => a.y - b.y);
+    let pipelineTaskStr = null;
+    characters.forEach(c => { 
+        c.update(); 
+        c.draw(ctx); 
+        if (c.status === 'working' && c.currentTask && c.currentTask.includes('Pipeline')) {
+            pipelineTaskStr = c.currentTask;
+        }
+    });
+
+    // --- PIPELINE LIVE VIEW ---
+    if (pipelineTaskStr) {
+        const wInfo = 300, hInfo = 40;
+        const px = canvas.width/2 - wInfo/2;
+        const py = 15;
+        
+        ctx.fillStyle = '#0f172aa0';
+        ctx.strokeStyle = '#f59e0b';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.roundRect(px, py, wInfo, hInfo, 8);
+        ctx.fill();
+        ctx.stroke();
+        
+        ctx.font = `bold 12px "Pixelify Sans"`;
+        ctx.fillStyle = '#f59e0b';
+        ctx.textAlign = 'center';
+        ctx.fillText("PIPELINE ĐANG CHẠY", canvas.width/2, py + 16);
+        ctx.font = `11px "Inter", sans-serif`;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(pipelineTaskStr, canvas.width/2, py + 30);
+        ctx.textAlign = 'start';
+    }
+
+    // Hover highlight
+    if (hoveredChar) {
+        const sz = Math.min(canvas.width,canvas.height)*0.05;
+        ctx.strokeStyle = '#ffd70066';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.ellipse(hoveredChar.x, hoveredChar.y + sz*0.2, sz, sz*0.6, 0, 0, Math.PI*2);
+        ctx.stroke();
+    }
+
+    requestAnimationFrame(gameLoop);
+}
+
+// ===== MOUSE EVENTS =====
+canvas.addEventListener('mousemove', e => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    hoveredChar = characters.find(c => c.contains(mx, my));
+    canvas.style.cursor = hoveredChar ? 'pointer' : 'default';
+
+    const tip = document.getElementById('tooltip');
+    if (hoveredChar) {
+        tip.style.display = 'block';
+        tip.style.left = (e.clientX - gameArea.getBoundingClientRect().left + 12) + 'px';
+        tip.style.top = (e.clientY - gameArea.getBoundingClientRect().top - 30) + 'px';
+        const st = hoveredChar.status === 'working' ? '⚒️ Đang rèn' : hoveredChar.status === 'sleeping' ? '💤 Đang ngủ' : '✅ Sẵn sàng';
+        tip.textContent = `${hoveredChar.emoji} ${hoveredChar.name} — ${st}`;
+    } else {
+        tip.style.display = 'none';
+    }
+});
+
+canvas.addEventListener('click', e => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    const clicked = characters.find(c => c.contains(mx, my));
+
+    const popup = document.getElementById('popup');
+    if (clicked) {
+        selectedChar = clicked;
+        const a = agents.find(ag => ag.id === clicked.id);
+        document.getElementById('popName').textContent = `${clicked.emoji} Tôm ${clicked.name}`;
+        document.getElementById('popRole').textContent = a?.role || '';
+        const stText = clicked.status === 'working' ? '⚒️ Đang rèn code' : clicked.status === 'sleeping' ? '💤 Đang ngủ khò khò' : '✅ Sẵn sàng nhận lệnh';
+        document.getElementById('popStatus').innerHTML = `<div style="color:${clicked.status==='working'?'#f59e0b':clicked.status==='sleeping'?'#475569':'#22c55e'};font-size:10px;margin-bottom:6px">${stText}</div>`;
+        
+        // Map current core
+        const selCore = document.getElementById('popCoreSelect');
+        if (a) {
+            selCore.style.display = 'block';
+            if (a.useGemini) selCore.value = 'gemini:gemini-2.5-flash';
+            else selCore.value = `ollama:${a.model || 'gemma4:26b'}`;
+            // Mở mặc định selected if exists
+            if (selCore.selectedIndex === -1) selCore.value = 'ollama:gemma4:26b';
+        } else selCore.style.display = 'none';
+
+        if (clicked.status === 'sleeping') {
+            document.getElementById('popBtn').textContent = '⏰ Đánh thức';
+            document.getElementById('popBtn').onclick = () => { qk(`/wake ${clicked.id}`); popup.style.display='none'; };
+        } else {
+            document.getElementById('popBtn').textContent = '💬 Giao việc';
+            document.getElementById('popBtn').onclick = () => {
+                document.getElementById('aSel').value = clicked.id;
+                document.getElementById('inp').focus();
+                popup.style.display = 'none';
+                addMsg('s', `Đã chọn ${clicked.emoji} Tôm ${clicked.name}`);
+            };
+        }
+
+        popup.style.display = 'block';
+        let px = e.clientX - gameArea.getBoundingClientRect().left + 10;
+        let py = e.clientY - gameArea.getBoundingClientRect().top - 10;
+        if (px + 210 > gameArea.clientWidth) px -= 220;
+        if (py + 150 > gameArea.clientHeight) py -= 160;
+        popup.style.left = px + 'px';
+        popup.style.top = py + 'px';
+    } else {
+        popup.style.display = 'none';
+        selectedChar = null;
+    }
+});
+
+// Hàm call API Đổi Lõi
+function changeAgentCore() {
+    if (!selectedChar) return;
+    const aId = selectedChar.id;
+    const val = document.getElementById('popCoreSelect').value;
+    const type = val.substring(0, val.indexOf(':')); // "ollama" or "gemini"
+    const model = val.substring(val.indexOf(':') + 1); // "qwen2.5-coder:7b"
+    const useGemini = type === 'gemini';
+    
+    fetch(`${API_BASE}/api/agents/${aId}/core`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ useGemini, model: useGemini ? 'gemini-2.5-flash' : model })
+    }).then(r=>r.json()).then(res => {
+        if(res.success) {
+            showToast('⚙️ Cấu hình Tôm', `Đã đổi não thành ${model}`, '#22c55e');
+            fetchAgents();
+        } else {
+            showToast('❌ Lỗi', res.error, '#ff0000');
+        }
+    }).catch(e => console.error(e));
+}
+
+// Close popup on outside click
+document.addEventListener('click', e => {
+    if (!e.target.closest('.agent-popup') && !e.target.closest('#gameCanvas')) {
+        document.getElementById('popup').style.display = 'none';
+        selectedChar = null;
+    }
+});
+
+// ===== UI =====
+function updateUI() {
+    const h = document.getElementById('hPills');
+    h.innerHTML = agents.filter(a => a.status !== 'sleeping').map(a => {
+        const dc = a.status === 'working' ? 'd-busy' : 'd-on';
+        return `<span class="pill"><span class="d ${dc}"></span>${a.emoji} ${a.name.replace('Tôm ','')}</span>`;
+    }).join('');
+
+    const sel = document.getElementById('aSel');
+    const cur = sel.value;
+    sel.innerHTML = '<option value="auto">🎖️ Tự động</option>';
+    agents.filter(a => a.status !== 'sleeping').forEach(a => {
+        sel.innerHTML += `<option value="${a.id}">${a.emoji} ${a.name}</option>`;
+    });
+    sel.value = cur;
+}
+
+// ===== CHAT =====
+// Convert markdown thô → HTML đẹp (fix lỗi hiện **mã** trên chat)
+function cleanMd(txt) {
+    if (!txt) return '';
+    return txt
+        .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')   // **bold** → <b>bold</b>
+        .replace(/\*(.+?)\*/g, '<i>$1</i>')         // *italic* → <i>italic</i>
+        .replace(/^###\s*(.+)/gm, '<b style="color:#ffd700">$1</b>')   // ### heading
+        .replace(/^##\s*(.+)/gm, '<b style="color:#ffd700;font-size:13px">$1</b>')  // ## heading
+        .replace(/^#\s*(.+)/gm, '<b style="color:#ffd700;font-size:14px">$1</b>')   // # heading
+        .replace(/`([^`]+)`/g, '<code style="background:#2c1e12;padding:1px 4px;border-radius:3px;font-size:11px">$1</code>')  // `code`
+        .replace(/^[-*]\s+/gm, '• ')              // - bullet → • bullet
+        .replace(/^(\d+)\.\s+/gm, '$1. ')          // numbered list
+        .replace(/\n/g, '<br>');                    // line breaks
+}
+
+function addMsg(t, txt, tag) {
+    const el = document.getElementById('msgs');
+    const d = document.createElement('div');
+    if (t==='u') { d.className='m mu'; d.textContent=txt; }
+    else if (t==='s') { d.className='m ms'; d.innerHTML=cleanMd(txt); }
+    else { d.className='m mb'; d.innerHTML=(tag?`<div class="at">${tag}</div>`:'')+cleanMd(txt); }
+    el.appendChild(d); el.scrollTop=el.scrollHeight; return d;
+}
+function addTp() { const d=document.createElement('div');d.className='m mb tp';d.id='tp';d.innerHTML='<span></span><span></span><span></span>';document.getElementById('msgs').appendChild(d); }
+function rmTp() { document.getElementById('tp')?.remove(); }
+
+async function send() {
+    const inp=document.getElementById('inp');
+    const txt=inp.value.trim(); if(!txt)return; inp.value='';
+    addMsg('u',txt); addTp();
+    const aid=document.getElementById('aSel').value;
+
+    // Nếu chọn Agent hoặc text có @mention → gọi /api/ask (Orchestrator)
+    const hasAt = /@(coder|reviewer|tester|facebook|secretary|gemini|director|designer|devops|zalo)/i.test(txt);
+    const useOrchestrator = (aid !== 'auto' || hasAt || txt.startsWith('/ask ') || txt.startsWith('/pipeline ') || aid === 'auto');
+
+    if (useOrchestrator) {
+        let askMsg = txt;
+        if (aid !== 'auto' && !hasAt) askMsg = `@${aid} ${txt}`;
+        if (askMsg.startsWith('/ask ')) askMsg = askMsg.substring(5);
+
+        try {
+            const res = await fetch(`${API_BASE}/api/ask`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}`},
+                body: JSON.stringify({ message: askMsg })
+            });
+            rmTp();
+            const data = await res.json();
+            if (!data.success) { 
+                addMsg('b', `❌ Lỗi: ${data.error}`); 
+            } else {
+                // Fallback: Nếu backend gởi bù các sự kiện qua HTTP response phòng khi WS chậm trễ
+                if (data.events && data.events.length > 0) {
+                    data.events.forEach(ev => {
+                        handleWSEvent({ data: JSON.stringify(ev) });
+                    });
+                }
+            }
+        } catch(e) { rmTp(); addMsg('b', `❌ Network Error: ${e.message}`); }
+        return;
+    }
+
+    // Chat thường (Gemma / Gemini)
+    let cmd = txt;
+    try {
+        const res=await fetch(`${API_BASE}/api/chat`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${API_KEY}`},body:JSON.stringify({messages:[{role:'user',content:cmd}]})});
+        rmTp();
+        if(!res.ok){addMsg('b',`Lỗi HTTP ${res.status}`);return}
+        const reader=res.body.getReader();const dec=new TextDecoder();let full='',mel=null;
+        const lbl='🦐 Tôm Nướng';
+        while(true){const{done,value}=await reader.read();if(done)break;for(const ln of dec.decode(value,{stream:true}).split('\n')){if(!ln.trim())continue;try{const c=JSON.parse(ln).message?.content;if(c){full+=c;if(!mel)mel=addMsg('b',full,lbl);else mel.innerHTML=`<div class="at">${lbl}</div>`+full.replace(/\n/g,'<br>');document.getElementById('msgs').scrollTop=document.getElementById('msgs').scrollHeight;}}catch(e){}}}
+        if(!mel&&!full)addMsg('b','(Không có phản hồi)',lbl);
+        fetchAgents();
+    } catch(e) { rmTp(); addMsg('b',`❌ ${e.message}`); }
+}
+function qk(c){const i=document.getElementById('inp');i.value=c;i.focus();if(!c.endsWith(' '))send()}
+
+// ===== INIT =====
+fetchAgents();
+setInterval(fetchAgents, 5000);
+gameLoop();
+document.getElementById('inp').addEventListener('input',function(){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px';});
+
+// ===== WEBSOCKET REAL-TIME =====
+let ws = null;
+let pipelineActive = false;
+let pipelineStep = 0;
+let pipelineTotal = 0;
+let pipelineTaskStr = '';
+
+// Cập nhật speech bubble cho nhân vật Agent trong game
+function upAgentMsg(agentId, text) {
+    const ch = characters.find(c => c.id === agentId);
+    if (ch) {
+        ch.speechText = text;
+        ch.speechTimer = 300;
+    }
+}
+
+function connectWS() {
+    const wsUrl = API_BASE.replace('https://','wss://').replace('http://','ws://') + '/ws';
+    ws = new WebSocket(wsUrl);
+    ws.onopen = () => { console.log('🔌 WS Connected'); showToast('🔌 Kết nối', 'Real-time đã bật', '#22c55e'); };
+    ws.onclose = () => { console.log('WS Disconnected, reconnecting...'); setTimeout(connectWS, 3000); };
+    ws.onerror = () => {};
+    ws.onmessage = (e) => {
+        try {
+            const data = JSON.parse(e.data);
+            handleWSEvent(data);
+        } catch(err) {}
+    };
+}
+
+function handleWSEvent(data) {
+    switch(data.type) {
+        case 'routing':
+            showToast('🎖️ Chỉ Huy', 'Đang phân tích yêu cầu...', '#f59e0b');
+            addMsg('s', data.text || '🎖️ Chỉ Huy đang phân tích yêu cầu...');
+            upAgentMsg('director', 'Tới công chuyện rồi mấy khứa ui... Em đang lên Plan!');
+            break;
+        case 'agent_start':
+            showToast(`${data.emoji} ${data.agent}`, data.reason, '#3b82f6');
+            addMsg('s', `🎖️ Phân công: ${data.emoji} ${data.agent} — ${data.reason}`);
+            fetchAgents();
+            break;
+        case 'agent_core_update':
+            showToast('🔄 Đổi Lõi AI', `${data.emoji} ${data.name} đã nâng cấp não lên ${data.model}`, '#3b82f6');
+            fetchAgents();
+            break;
+        case 'agent_done':
+            showToast(`${data.emoji} ${data.agent}`, '✅ Hoàn thành!', '#22c55e');
+            if (data.output) {
+                // KHÔNG BAO GIỜ dump raw code vào chat! Chỉ hiển thị summary ngắn
+                const isCode = /```|<html|<div|<style|function |const |import |<!DOCTYPE/i.test(data.output);
+                if (isCode) {
+                    // Code output → chỉ hiện thông báo ngắn + link Kho
+                    const lines = data.output.split('\n').length;
+                    addMsg('b', `✅ Đã hoàn thành! (${lines} dòng code)\n\n👉 Vào <b>📦 Kho Dự Án</b> để xem Preview và tải mã nguồn.`, `${data.emoji} ${data.agent}`);
+                } else {
+                    // Không phải code → hiện summary (cắt tối đa 500 ký tự)
+                    const short = data.output.length > 500 ? data.output.substring(0, 500) + '...\n\n👉 Xem đầy đủ tại <b>📦 Kho Dự Án</b>' : data.output;
+                    addMsg('b', short, `${data.emoji} ${data.agent}`);
+                }
+            }
+            fetchAgents();
+            break;
+
+        // === PROJECT PIPELINE EVENTS ===
+        case 'project_created':
+            showToast('📦 Dự Án Mới', data.project?.name || 'Đang tạo...', '#3b82f6');
+            addMsg('s', `📦 Khởi tạo dự án: ${data.project?.name}`);
+            break;
+        case 'plan':
+            showToast('🎖️ Chỉ Huy', `Kế hoạch: ${data.plan?.files?.length || '?'} file, ~${data.plan?.estimatedMinutes || '?'} phút`, '#f59e0b');
+            addMsg('s', `📋 KẾ HOẠCH: ${data.plan?.files?.length} file cần tạo, dự tính ~${data.plan?.estimatedMinutes} phút`);
+            break;
+        case 'step':
+            showToast(`${data.emoji} ${data.agent}`, data.action, '#3b82f6');
+            addMsg('s', `${data.emoji} ${data.agent}: ${data.action}`);
+            pipelineActive = true;
+            pipelineTaskStr = `${data.emoji} ${data.agent}`;
+            fetchAgents();
+            break;
+        case 'file_saved':
+            showToast(`👨‍💻 Coder`, `✅ Viết xong: ${data.file} (${data.index}/${data.total})`, '#22c55e');
+            addMsg('b', `📄 Viết xong: <b>${data.file}</b> — ${data.size} ký tự (${data.index}/${data.total})`, '👨‍💻 Tôm Coder');
+            break;
+        case 'code_done':
+            showToast('👨‍💻 Coder', data.message || `Viết xong ${data.files?.length} file!`, '#22c55e');
+            addMsg('s', data.message || `👨‍💻 Viết xong ${data.files?.length} file`);
+            fetchAgents();
+            break;
+        case 'review_score':
+            const scoreColor = data.score >= 7 ? '#22c55e' : data.score >= 5 ? '#f59e0b' : '#ef4444';
+            showToast('🔍 Reviewer', data.message || `Chấm ${data.score}/10`, scoreColor);
+            addMsg('s', data.message || `🔍 Reviewer chấm ${data.score}/10`);
+            break;
+        case 'review_passed':
+            showToast('✅ Review PASSED', data.message || `Điểm ${data.score}/10`, '#22c55e');
+            addMsg('s', data.message || `✅ Code PASSED! Điểm ${data.score}/10`);
+            break;
+        case 'feedback':
+            showToast('🔄 Feedback Loop', data.message || `Vòng ${data.round}`, '#f59e0b');
+            addMsg('s', data.message || `🔄 Gửi ngược Coder sửa — Vòng ${data.round}`);
+            break;
+        case 'file_fixed':
+            showToast('🔧 Coder', data.message || `Sửa: ${data.file}`, '#3b82f6');
+            addMsg('b', `🔧 Đã sửa: <b>${data.file}</b> (vòng ${data.round})`, '👨‍💻 Tôm Coder');
+            break;
+        case 'feedback_escalate':
+            showToast('⚠️ CẦN Ý KIẾN', data.message || 'Hết 2 vòng review!', '#ef4444');
+            addMsg('s', data.message || `⚠️ Đã hết 2 vòng review. Xin ý kiến Khầy!`);
+            break;
+        case 'test_done':
+            showToast('🧪 Tester', data.message || 'Kiểm thử xong!', '#22c55e');
+            addMsg('b', data.output?.substring(0, 500) || 'Kiểm thử hoàn tất', '🧪 Tôm Tester');
+            fetchAgents();
+            break;
+        case 'project_done':
+            pipelineActive = false;
+            showToast('📦 HOÀN TẤT', data.message || `${data.report?.name} — ${data.report?.files?.length} files`, '#22c55e');
+            const r = data.report || {};
+            const htmlMsg = `Báo cáo Khầy, tụi em đã hoàn tất dự án <b>${r.name || 'mới'}</b> nhé!<br><br>
+📊 <b>Chất lượng code:</b> ${r.reviewScore || 'Chưa rõ'} / 10<br>
+📁 <b>Đã viết:</b> ${r.files ? r.files.length : 0} files<br><br>
+<a href="${API_BASE}${r.previewUrl || ''}" target="_blank" style="display:inline-block;padding:4px 8px;background:#f59e0b;color:#1e293b;border-radius:4px;text-decoration:none;font-weight:bold;margin-right:8px;font-family:'Inter',sans-serif;font-size:11px">👁️ XEM PREVIEW</a> 
+<a href="${API_BASE}${r.downloadUrl || ''}" target="_blank" style="display:inline-block;padding:4px 8px;background:#3b82f6;color:#ffffff;border-radius:4px;text-decoration:none;font-weight:bold;font-family:'Inter',sans-serif;font-size:11px">📥 TẢI MÃ NGUỒN (ZIP)</a><br><br>
+Khầy có muốn <b>đẩy kho code này lên GitHub</b> luôn không? Nếu cần, Khầy gửi link repo git để em Push nhé!`;
+            addMsg('b', htmlMsg, '📝 Tôm Thư Ký');
+            fetchAgents();
+            break;
+
+        // Pipeline thường
+        case 'pipeline_step':
+            let agId = 'coder';
+            const agName = (data.agent || '').toLowerCase();
+            if (agName.includes('chỉ huy') || agName.includes('director')) agId = 'director';
+            else if (agName.includes('review')) agId = 'reviewer';
+            else if (agName.includes('test')) agId = 'tester';
+            else if (agName.includes('thư ký') || agName.includes('secretary')) agId = 'secretary';
+            else if (agName.includes('design')) agId = 'designer';
+            
+            // Cập nhật speech bubble cho nhân vật trong game
+            if (data.output) {
+                upAgentMsg(agId, (data.output || '').substring(0, 50) + ((data.output||'').length>50?'...':''));
+            }
+
+            // Ghi sự kiện vào Box Chat (Loại trừ các dòng PING rác)
+            const status = data.status || '';
+            const output = data.output || '';
+            const isPing = status.includes('Vẫn đang') || status.includes('mướt mồ hôi') || status.includes('dò đường') || status.includes('Đợi em');
+            
+            if (!isPing && status) {
+                // Hiển thị tin nhắn agent lên chat — giới hạn output, bỏ rác
+                const shortOutput = output.length > 150 ? output.substring(0, 150) + '...' : output;
+                if (shortOutput) {
+                    addMsg('b', shortOutput, `${data.emoji || '🦐'} ${data.agent || 'Agent'}`);
+                } else {
+                    addMsg('s', `${data.emoji || '🦐'} ${data.agent || 'Agent'}: ${status}`);
+                }
+            }
+
+            if (status === 'start') {
+                showToast(`${data.emoji} ${data.agent}`, `Bước ${data.step}/${data.total} — Đang làm...`, '#f59e0b');
+                pipelineActive = true;
+                pipelineStep = data.step;
+                pipelineTotal = data.total;
+                pipelineTaskStr = `${data.emoji} ${data.agent}`;
+            } else if (status.toLowerCase().includes('hoàn tất') || status.toLowerCase().includes('xong')) {
+                showToast(`${data.emoji} ${data.agent}`, `Bước ${data.step}/${data.total} — Xong!`, '#22c55e');
+            } else if (!isPing) {
+                showToast(`${data.emoji || '🦐'} ${data.agent || 'Agent'}`, status, '#3b82f6');
+            }
+            fetchAgents();
+            break;
+        case 'pipeline_done':
+            pipelineActive = false;
+            showToast('⛓️ Pipeline', '✅ Hoàn tất!', '#22c55e');
+            fetchAgents();
+            break;
+    }
+}
+
+function showToast(title, text, color) {
+    const container = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.style.borderLeftColor = color || '#f59e0b';
+    toast.style.borderLeft = `3px solid ${color || '#f59e0b'}`;
+    toast.innerHTML = `<div class="t-agent">${title}</div><div class="t-action">${text}</div>`;
+    container.appendChild(toast);
+    setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 5000);
+}
+
+connectWS();
+
+// LOAD LỊCH SỬ CHAT TỪ DATABASE (thay thế localStorage cũ)
+function loadChatHistory() {
+    fetch(`${API_BASE}/api/chat/history?limit=50`, { headers: { 'Authorization': 'Bearer ' + API_KEY } })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success && data.messages && data.messages.length > 0) {
+                const msgs = document.getElementById('msgs');
+                msgs.innerHTML = ''; // Xóa placeholder
+                data.messages.forEach(m => {
+                    const type = m.type === 'user' ? 'u' : m.type === 'bot' ? 'b' : 's';
+                    // Không load code cũ vào chat
+                    const isCode = /```|<html|<div|<style|function |const |import |<!DOCTYPE/i.test(m.content);
+                    if (isCode && m.content.length > 500) {
+                        addMsg(type, `✅ [Code đã lưu vào Kho] — ${m.content.split('\n').length} dòng`, m.sender);
+                    } else {
+                        const short = m.content.length > 500 ? m.content.substring(0, 300) + '...' : m.content;
+                        addMsg(type, short, m.sender);
+                    }
+                });
+            }
+        })
+        .catch(e => console.log('Chat history load failed:', e));
+}
+
+// XÓA LỊCH SỬ CHAT
+function clearChatHistory() {
+    if (!confirm('Khầy có chắc muốn xóa toàn bộ lịch sử chat không?')) return;
+    fetch(`${API_BASE}/api/chat/history`, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + API_KEY } })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('msgs').innerHTML = '<div class="m ms">🦞 Lịch sử đã xóa sạch. Sẵn sàng nhận lệnh mới!</div>';
+                localStorage.removeItem('claw_chat_hist'); // Xóa nốt rác localStorage cũ
+                showToast('🗑️ Xóa lịch sử', 'Đã xóa sạch!', '#22c55e');
+            }
+        })
+        .catch(e => console.error(e));
+}
+// ============================================
+// SETTINGS MODAL LOGIC
+// ============================================
+function openSettingsModal() {
+    document.getElementById('stModal').classList.add('active');
+    loadSettingsData();
+}
+
+function closeSettingsModal() {
+    document.getElementById('stModal').classList.remove('active');
+}
+
+function loadSettingsData() {
+    // Load API Keys
+    fetch(`${API_BASE}/api/db/keys`, { headers: { 'Authorization': 'Bearer ' + API_KEY } })
+        .then(r => r.json())
+        .then(data => {
+            const tb = document.getElementById('tbKeys');
+            if (!data.success || !data.keys || data.keys.length === 0) {
+                tb.innerHTML = '<tr><td colspan="6" style="text-align:center">Chưa có API Key nào.</td></tr>';
+                return;
+            }
+            tb.innerHTML = data.keys.map(k => `
+                <tr>
+                    <td>${k.id}</td>
+                    <td>${k.label || '---'}</td>
+                    <td style="font-family:monospace">${k.api_key}</td>
+                    <td>${k.usage_count} lần</td>
+                    <td>
+                        <button class="btn-sm ${k.active ? 'green' : 'red'}" onclick="toggleKey(${k.id}, ${!k.active})">
+                            ${k.active ? 'BẬT' : 'TẮT'}
+                        </button>
+                    </td>
+                    <td><button class="btn-sm red" onclick="deleteKey(${k.id})">Xóa</button></td>
+                </tr>
+            `).join('');
+        });
+
+    // Load Agents
+    fetch(`${API_BASE}/api/db/agents`, { headers: { 'Authorization': 'Bearer ' + API_KEY } })
+        .then(r => r.json())
+        .then(data => {
+            const tb = document.getElementById('tbAgents');
+            if (data.success && data.agents) {
+                tb.innerHTML = data.agents.map(a => `
+                    <tr>
+                        <td>${a.emoji} <b>${a.name}</b><br><small style="color:#64748b">${a.id}</small></td>
+                        <td title="${a.role}">${a.role.substring(0, 20)}...</td>
+                        <td>
+                            <select id="sel_eng_${a.id}">
+                                <option value="0" ${!a.use_gemini ? 'selected' : ''}>Ollama (Local)</option>
+                                <option value="1" ${a.use_gemini ? 'selected' : ''}>Gemini API (Cloud)</option>
+                            </select>
+                        </td>
+                        <td><input type="text" id="inp_mod_${a.id}" value="${a.model || ''}" placeholder="VD: gemma4:26b"></td>
+                        <td><button class="btn-sm" onclick="saveAgentConfig('${a.id}')">💾 Lưu</button></td>
+                    </tr>
+                `).join('');
+            }
+        });
+}
+
+function addApiKey() {
+    const key = document.getElementById('newApiKey').value.trim();
+    const label = document.getElementById('newApiLabel').value.trim();
+    if (!key) return alert('Vui lòng nhập API Key!');
+    fetch(`${API_BASE}/api/db/keys`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + API_KEY },
+        body: JSON.stringify({ api_key: key, label: label })
+    }).then(r => r.json()).then(res => {
+        if (res.success) {
+            document.getElementById('newApiKey').value = '';
+            document.getElementById('newApiLabel').value = '';
+            showToast('API Key', 'Thêm mới thành công!', '#22c55e');
+            loadSettingsData();
+        } else alert(res.error);
+    });
+}
+
+function toggleKey(id, active) {
+    fetch(`${API_BASE}/api/db/keys/${id}/toggle`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + API_KEY },
+        body: JSON.stringify({ active })
+    }).then(() => loadSettingsData());
+}
+
+function deleteKey(id) {
+    if (!confirm('Chắc chắn muốn xóa Key này?')) return;
+    fetch(`${API_BASE}/api/db/keys/${id}`, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + API_KEY } }).then(() => loadSettingsData());
+}
+
+function testApiKey() {
+    const key = document.getElementById('newApiKey').value.trim();
+    if (!key) return alert('Vui lòng dán API Key vào ô nhập để Test!');
+    document.getElementById('newApiKey').disabled = true;
+    showToast('Test API', 'Đang kết nối Gemini...', '#f59e0b');
+    fetch(`${API_BASE}/api/test-key`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + API_KEY },
+        body: JSON.stringify({ api_key: key })
+    }).then(r => r.json()).then(res => {
+        document.getElementById('newApiKey').disabled = false;
+        if (res.success) {
+            alert('🎉 ' + res.message);
+            showToast('Test API', 'Key sống, phản hồi cực gắt!', '#22c55e');
+        } else {
+            alert('❌ Lỗi: ' + res.error);
+        }
+    }).catch(e => {
+        document.getElementById('newApiKey').disabled = false;
+        alert('Lỗi kết nối server!');
+    });
+}
+
+function saveAgentConfig(id) {
+    const useGemini = document.getElementById(`sel_eng_${id}`).value === '1';
+    const model = document.getElementById(`inp_mod_${id}`).value.trim();
+    
+    // Gọi API update DB
+    Promise.all([
+        fetch(`${API_BASE}/api/db/agents/${id}`, {
+            method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + API_KEY },
+            body: JSON.stringify({ field: 'use_gemini', value: useGemini ? 1 : 0 })
+        }),
+        fetch(`${API_BASE}/api/db/agents/${id}`, {
+            method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + API_KEY },
+            body: JSON.stringify({ field: 'model', value: model })
+        })
+    ]).then(() => {
+        showToast('Cài đặt', `Đã lưu config cho ${id}`, '#3b82f6');
+    });
+}
+
+// Load lịch sử khi mở trang
+document.addEventListener('DOMContentLoaded', () => {
+    localStorage.removeItem('claw_chat_hist'); // Xóa rác localStorage cũ
+    loadChatHistory();
+});
+</script>
+<div class="toast-container" id="toastContainer"></div>
+</body>
+</html>

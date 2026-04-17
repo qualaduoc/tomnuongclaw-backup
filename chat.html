@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tôm Nướng AI - Premium Interface</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: { 
+                        darkBase: '#0F172A',
+                        darkPanel: 'rgba(30, 41, 59, 0.7)',
+                        brand: '#FF6B6B',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <!-- React & ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Marked.js + DOMPurify + Highlight.js -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.5/purify.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/atom-one-dark-reasonable.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #0F172A; }
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        
+        .typing-dot { animation: typing 1.4s infinite ease-in-out both; }
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes typing {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+        
+        /* Markdown Style Overrides */
+        .prose pre {
+            background: #1E293B !important;
+            border-radius: 0.75rem;
+            padding: 1rem;
+            margin-top: 0.5rem;
+            margin-bottom: 0.5rem;
+            overflow-x: auto;
+            border: 1px solid #334155;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9em;
+        }
+        .prose code { color: #FF85A2; font-family: 'JetBrains Mono', monospace; font-size: 0.9em; background: #1E293B; padding: 0.2rem 0.4rem; border-radius: 0.25rem; }
+        .prose pre code { color: inherit; background: none; padding: 0; }
+        .prose p { margin-bottom: 0.5rem; }
+        .prose p:last-child { margin-bottom: 0; }
+        .prose ul { list-style-type: disc; margin-left: 1.5rem; margin-bottom: 0.5rem; }
+        .prose ol { list-style-type: decimal; margin-left: 1.5rem; margin-bottom: 0.5rem; }
+        .prose h1, .prose h2, .prose h3 { font-weight: bold; margin-top: 1rem; margin-bottom: 0.5rem; color: #FFF; }
+        .prose a { color: #3B82F6; text-decoration: underline; }
+    </style>
+</head>
+<body class="text-gray-200 flex h-screen items-center justify-center p-0 md:p-6 overflow-hidden bg-cover bg-center" style="background-image: radial-gradient(circle at 50% 0%, #1e1b4b 0%, #0f172a 100%);">
+    
+    <div id="root" class="w-full h-full max-w-5xl mx-auto md:rounded-[2.5rem] overflow-hidden glass-panel flex flex-col relative z-10 transition-all duration-500"></div>
+
+    <script type="text/babel">
+        // Cấu hình MarkedJS xài Highlight JS
+        marked.setOptions({
+            highlight: function(code, lang) {
+                const language = hljs.getLanguage(lang) ? lang : 'plaintext';
+                return hljs.highlight(code, { language }).value;
+            },
+            langPrefix: 'hljs language-',
+            gfm: true,
+            breaks: true
+        });
+
+        const { useState, useRef, useEffect } = React;
+
+        function ChatApp() {
+            const [messages, setMessages] = useState([
+                { 
+                    id: 1, 
+                    role: 'assistant', 
+                    text: 'Dạ Khầy! Em là Tôm Nướng mỏ hỗn đây. Giao diện Premium siêu việt đã sẵn sàng! Gõ @ để triệu hồi Đội Quân Tôm!' 
+                }
+            ]);
+            const [input, setInput] = useState('');
+            const [isLoading, setIsLoading] = useState(false);
+            const [selectedModel, setSelectedModel] = useState('gemma'); 
+            const [agentsList, setAgentsList] = useState([]);
+            const [showMentions, setShowMentions] = useState(false);
+            const [mentionFilter, setMentionFilter] = useState('');
+            const messagesEndRef = useRef(null);
+            const inputRef = useRef(null);
+
+            // Load danh sách Agent khi mở web
+            useEffect(() => {
+                fetch('https://bot.aiphocap.vn/api/agents/list')
+                    .then(r => r.json())
+                    .then(d => { if (d.success) setAgentsList(d.agents); })
+                    .catch(() => {});
+            }, []);
+
+            const scrollToBottom = () => {
+                messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+            }
+            useEffect(() => { 
+                scrollToBottom();
+                document.querySelectorAll('pre code').forEach((block) => {
+                    hljs.highlightElement(block);
+                });
+            }, [messages, isLoading]);
+
+            // Xử lý gõ @ để hiện autocomplete
+            const handleInputChange = (e) => {
+                const val = e.target.value;
+                setInput(val);
+                const atMatch = val.match(/@(\w*)$/);
+                if (atMatch) {
+                    setShowMentions(true);
+                    setMentionFilter(atMatch[1].toLowerCase());
+                } else {
+                    setShowMentions(false);
+                }
+            };
+
+            const selectAgent = (agent) => {
+                const newVal = input.replace(/@\w*$/, `@${agent.id} `);
+                setInput(newVal);
+                setShowMentions(false);
+                inputRef.current?.focus();
+            };
+
+            const filteredAgents = agentsList.filter(a => 
+                a.id.includes(mentionFilter) || a.name.toLowerCase().includes(mentionFilter)
+            );
+
+            // Phát hiện @mention trong text
+            const hasAgentMention = (text) => /@(coder|reviewer|tester|facebook|secretary|gemini|director|designer|devops|zalo|chỉ\s*huy|thư\s*ký)/i.test(text);
+
+            const sendMessage = async (e) => {
+                e.preventDefault();
+                if (!input.trim() || isLoading) return;
+                setShowMentions(false);
+
+                const userText = input.trim();
+                const newMessages = [...messages, { id: Date.now(), role: 'user', text: userText }];
+                setMessages(newMessages);
+                setInput('');
+                setIsLoading(true);
+
+                const botTypingId = Date.now() + 1;
+                setMessages(prev => [...prev, { id: botTypingId, role: 'assistant', text: '', isTyping: true }]);
+
+                const API_KEY = 'khay_vip_2026';
+
+                try {
+                    // === CHẾ ĐỘ AGENT: Dùng @mention hoặc selectedModel === 'agents' ===
+                    if (hasAgentMention(userText) || selectedModel === 'agents') {
+                        const res = await fetch('https://bot.aiphocap.vn/api/ask', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
+                            body: JSON.stringify({ message: userText })
+                        });
+                        const data = await res.json();
+                        let answer = '';
+                        if (data.success) {
+                            const ev = data.events || [];
+                            for (const e of ev) {
+                                if (e.type === 'agent_done') answer += `${e.emoji} ${e.agent} (${e.reason}):\n\n${e.output}`;
+                                if (e.type === 'pipeline_done') {
+                                    answer += '⛓️ PIPELINE HOÀN TẤT:\n\n';
+                                    for (const r of e.results) answer += `${r.emoji} ${r.agent}: ${r.status === 'success' ? '✅' : '❌'}\n${r.output}\n\n---\n\n`;
+                                }
+                            }
+                            if (!answer && data.result?.output) answer = data.result.output;
+                        } else {
+                            answer = '❌ Lỗi: ' + (data.error || 'Không xác định');
+                        }
+                        setMessages(prev => prev.map(msg => 
+                            msg.id === botTypingId ? { ...msg, text: answer || '(Không có phản hồi)', isTyping: false } : msg
+                        ));
+                        return;
+                    }
+
+                    // === CHẾ ĐỘ CHAT THƯỜNG (Gemma / Gemini) ===
+                    const apiEndpoint = 'https://bot.aiphocap.vn/api/chat';
+                    const payloadMessages = newMessages.slice(-6).map((m, index, arr) => {
+                        let content = m.text;
+                        if (m.role === 'user' && index === arr.length - 1 && selectedModel === 'gemini') content = '/pro ' + content;
+                        return { role: m.role, content };
+                    });
+
+                    const response = await fetch(apiEndpoint, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
+                        body: JSON.stringify({ messages: [{ role: 'system', content: 'Tên bạn là Tôm Nướng. Xưng Em, gọi Khầy. Cực kỳ súc tích.' }, ...payloadMessages] })
+                    });
+
+                    if (!response.ok) throw new Error((await response.json().catch(() => ({}))).error || `HTTP ${response.status}`);
+
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder('utf-8');
+                    let currentBuffer = '', finalAnswer = '';
+                    setMessages(prev => prev.map(msg => msg.id === botTypingId ? { ...msg, isTyping: false, isStreaming: true } : msg));
+
+                    while (true) {
+                        const { value, done } = await reader.read();
+                        if (done) break;
+                        currentBuffer += decoder.decode(value, { stream: true });
+                        const lines = currentBuffer.split('\n');
+                        currentBuffer = lines.pop();
+                        for (const line of lines) {
+                            if (!line.trim()) continue;
+                            try { const p = JSON.parse(line); if (p.message?.content) { finalAnswer += p.message.content; setMessages(prev => prev.map(msg => msg.id === botTypingId ? { ...msg, text: finalAnswer } : msg)); } } catch(e) {}
+                        }
+                    }
+                    setMessages(prev => prev.map(msg => msg.id === botTypingId ? { ...msg, text: finalAnswer, isStreaming: false } : msg));
+
+                } catch (error) {
+                    setMessages(prev => prev.map(msg => 
+                        msg.id === botTypingId ? { ...msg, text: `❌ Lỗi kết nối: ${error.message}`, isTyping: false, isStreaming: false } : msg
+                    ));
+                } finally {
+                    setIsLoading(false);
+                }
+            };
+            
+            // Xử lý Markdown chuẩn
+            const renderMarkdown = (text) => {
+                const rawMarkup = marked.parse(text);
+                const safeMarkup = DOMPurify.sanitize(rawMarkup);
+                return { __html: safeMarkup };
+            };
+
+            return (
+                <div className="flex flex-col h-full w-full relative">
+                    {/* Header Dark AI */}
+                    <div className="pt-8 pb-5 px-6 sm:px-10 flex border-b border-white/5 items-center justify-between relative shadow-lg bg-slate-900/40">
+                        <div className="flex items-center gap-4">
+                            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-rose-500 to-orange-400 flex items-center justify-center font-bold text-3xl shadow-[0_0_20px_rgba(251,146,60,0.5)] transform hover:rotate-12 transition-transform duration-300 ring-2 ring-white/10">
+                                🦐
+                            </div>
+                            <div>
+                                <h1 className="font-extrabold text-2xl tracking-tight text-white drop-shadow-md flex items-center gap-2">
+                                    Tôm Nướng <span className="text-rose-400">AI</span>
+                                    <span className="px-2 py-0.5 rounded-md text-[10px] bg-indigo-500/30 text-indigo-300 border border-indigo-500/50 uppercase ml-2">PRO MAX</span>
+                                </h1>
+                                <p className="text-xs font-medium text-slate-400 mt-1 flex items-center gap-2">
+                                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> 
+                                    VPS Direct Gateway
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Model Switcher + Agent Mode */}
+                        <div className="bg-slate-800/80 rounded-xl p-1 shadow-inner border border-slate-700/50 flex items-center hidden sm:flex">
+                            <button onClick={() => setSelectedModel('gemma')} className={`px-3 py-2 rounded-lg text-sm font-bold transition-all duration-300 flex items-center gap-2 ${selectedModel === 'gemma' ? 'bg-gradient-to-r from-blue-600 to-indigo-500 text-white shadow-lg' : 'text-slate-400 hover:text-slate-200'}`}>
+                                <i className="fa-solid fa-microchip"></i> Gemma-4
+                            </button>
+                            <button onClick={() => setSelectedModel('gemini')} className={`px-3 py-2 rounded-lg text-sm font-bold transition-all duration-300 flex items-center gap-2 ${selectedModel === 'gemini' ? 'bg-gradient-to-r from-pink-600 to-rose-500 text-white shadow-lg' : 'text-slate-400 hover:text-slate-200'}`}>
+                                <i className="fa-solid fa-bolt"></i> Gemini
+                            </button>
+                            <button onClick={() => setSelectedModel('agents')} className={`px-3 py-2 rounded-lg text-sm font-bold transition-all duration-300 flex items-center gap-2 ${selectedModel === 'agents' ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg' : 'text-slate-400 hover:text-slate-200'}`}>
+                                <i className="fa-solid fa-users-gear"></i> Agents
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Chat Area */}
+                    <div className="flex-1 overflow-y-auto px-4 sm:px-10 py-6 space-y-6 z-10 pb-32">
+                        {messages.map(msg => (
+                            <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                
+                                {msg.role === 'assistant' && (
+                                    <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-rose-500 to-orange-400 flex-shrink-0 flex items-center justify-center text-lg shadow-md mr-4 mt-auto mb-1 border border-white/10">🦐</div>
+                                )}
+
+                                <div className={`relative max-w-[85%] px-6 py-4 font-medium leading-relaxed prose prose-invert
+                                    ${msg.role === 'user' 
+                                        ? 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-[1.5rem] rounded-br-sm shadow-lg' 
+                                        : 'bg-slate-800/90 text-slate-200 rounded-[1.5rem] rounded-bl-sm border border-slate-600/50 shadow-xl shadow-black/20'}`}>
+                                    
+                                    {msg.isTyping ? (
+                                        <div className="flex space-x-1.5 items-center h-6 px-2">
+                                            <div className="w-2.5 h-2.5 bg-rose-400 rounded-full typing-dot"></div>
+                                            <div className="w-2.5 h-2.5 bg-rose-400 rounded-full typing-dot"></div>
+                                            <div className="w-2.5 h-2.5 bg-rose-400 rounded-full typing-dot"></div>
+                                        </div>
+                                    ) : (
+                                        <div className="text-[15px]" dangerouslySetInnerHTML={renderMarkdown(msg.text)}></div>
+                                    )}
+
+                                    {msg.isStreaming && <span className="inline-block w-2.5 h-4 ml-1 bg-gradient-to-b from-rose-400 to-orange-400 animate-pulse align-middle"></span>}
+                                </div>
+                            </div>
+                        ))}
+                        <div ref={messagesEndRef} className="h-6" />
+                    </div>
+
+                    {/* Input Area */}
+                    <div className="absolute bottom-0 left-0 w-full p-4 sm:p-8 pt-0 z-20 bg-gradient-to-t from-slate-900 via-slate-900/90 to-transparent">
+                        
+                        {/* Mobile model switcher */}
+                        <div className="flex sm:hidden justify-center mb-4 gap-2">
+                             <button onClick={() => setSelectedModel('gemma')} className={`px-3 py-1.5 rounded-full text-xs font-bold ${selectedModel === 'gemma' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400'}`}>Gemma</button>
+                             <button onClick={() => setSelectedModel('gemini')} className={`px-3 py-1.5 rounded-full text-xs font-bold ${selectedModel === 'gemini' ? 'bg-pink-600 text-white' : 'bg-slate-800 text-slate-400'}`}>Gemini</button>
+                             <button onClick={() => setSelectedModel('agents')} className={`px-3 py-1.5 rounded-full text-xs font-bold ${selectedModel === 'agents' ? 'bg-amber-500 text-white' : 'bg-slate-800 text-slate-400'}`}>🦐 Agents</button>
+                        </div>
+
+                        <form onSubmit={sendMessage} className="max-w-4xl mx-auto relative flex items-center bg-slate-800/80 rounded-2xl shadow-2xl border border-slate-600/50 transition-all focus-within:border-rose-500/50 focus-within:shadow-[0_0_30px_rgba(244,63,94,0.15)] backdrop-blur-md">
+                            
+                            {/* @ Mention Autocomplete Popup */}
+                            {showMentions && filteredAgents.length > 0 && (
+                                <div className="absolute bottom-full left-0 w-full mb-2 bg-slate-800 border border-slate-600 rounded-xl shadow-2xl overflow-hidden z-50 max-h-64 overflow-y-auto">
+                                    <div className="px-4 py-2 text-xs text-slate-400 border-b border-slate-700">🦐 Chọn Agent để triệu hồi</div>
+                                    {filteredAgents.map(a => (
+                                        <button key={a.id} type="button" onClick={() => selectAgent(a)}
+                                            className="w-full px-4 py-3 flex items-center gap-3 hover:bg-slate-700/80 transition-colors text-left border-b border-slate-700/50 last:border-0">
+                                            <span className="text-xl">{a.emoji}</span>
+                                            <div>
+                                                <div className="text-white font-semibold text-sm">{a.name} <span className="text-slate-500 text-xs">@{a.id}</span></div>
+                                                <div className="text-slate-400 text-xs">{a.role}</div>
+                                            </div>
+                                            {!a.active && <span className="ml-auto text-xs bg-slate-600 px-2 py-0.5 rounded-full">💤 Ngủ</span>}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+
+                            <div className="pl-6 text-slate-400 text-lg">
+                                {selectedModel === 'agents' ? <i className="fa-solid fa-users-gear text-amber-400"></i> : selectedModel === 'gemini' ? <i className="fa-solid fa-wand-magic-sparkles text-rose-400"></i> : <i className="fa-solid fa-microchip text-blue-400"></i>}
+                            </div>
+                            
+                            <input 
+                                ref={inputRef}
+                                type="text" 
+                                value={input}
+                                onChange={handleInputChange}
+                                placeholder={selectedModel === 'agents' ? 'Gõ @ để triệu hồi Agent hoặc nhập lệnh...' : selectedModel === 'gemini' ? 'Hỏi Gemini PRO...' : 'Điều khiển VPS qua Gemma 4...'}
+                                className="w-full bg-transparent text-white placeholder-slate-400 px-4 py-4 focus:outline-none text-[15px] sm:text-base font-medium"
+                                disabled={isLoading}
+                                autoFocus
+                            />
+                            
+                            <button 
+                                type="submit" 
+                                disabled={isLoading || !input.trim()}
+                                className={`absolute right-2 w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 
+                                    ${input.trim() && !isLoading 
+                                        ? 'bg-gradient-to-tr from-rose-500 to-orange-500 shadow-lg scale-100 text-white hover:scale-105 hover:rotate-12' 
+                                        : 'bg-slate-700/50 text-slate-500 scale-95 cursor-not-allowed'}`}
+                            >
+                                <i className={`fa-solid ${isLoading ? 'fa-spinner fa-spin' : 'fa-paper-plane'} text-sm`}></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<ChatApp />);
+    </script>
+</body>
+</html>

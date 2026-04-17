@@ -1,0 +1,7 @@
+[user]
+	email = tomnuong@openclaw.local
+	name = Tom Nuong Claw
+[credential]
+	helper = store
+[init]
+	defaultBranch = main

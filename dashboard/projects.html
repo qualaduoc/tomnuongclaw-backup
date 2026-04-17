@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📦 Kho Dự Án — Đội Quân Tôm</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+
+.header { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 24px 32px; border-bottom: 1px solid #334155; display: flex; align-items: center; justify-content: space-between; }
+.header h1 { font-size: 22px; font-weight: 800; display: flex; align-items: center; gap: 10px; }
+.header h1 span { background: linear-gradient(135deg, #f59e0b, #ef4444); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.ws-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-left: 8px; transition: 0.3s; }
+.ws-dot.on { background: #22c55e; box-shadow: 0 0 8px #22c55e; }
+.ws-dot.off { background: #ef4444; }
+.nav { display: flex; gap: 12px; }
+.nav a { color: #94a3b8; text-decoration: none; font-size: 13px; font-weight: 600; padding: 8px 16px; border-radius: 8px; transition: 0.2s; }
+.nav a:hover, .nav a.active { background: #1e293b; color: #f59e0b; }
+
+.container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.stat { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 20px; text-align: center; transition: 0.3s; }
+.stat .num { font-size: 28px; font-weight: 800; color: #f59e0b; }
+.stat .lbl { font-size: 12px; color: #64748b; margin-top: 4px; }
+
+.project-list { display: flex; flex-direction: column; gap: 12px; }
+
+.project-card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 20px; display: flex; align-items: center; gap: 20px; transition: 0.3s; position: relative; overflow: hidden; }
+.project-card:hover { border-color: #f59e0b44; box-shadow: 0 4px 24px rgba(245,158,11,0.08); }
+.project-card.live { border-color: #f59e0b; animation: livePulse 2s ease-in-out infinite; }
+@keyframes livePulse { 0%,100% { box-shadow: 0 0 0 0 rgba(245,158,11,0); } 50% { box-shadow: 0 0 20px 4px rgba(245,158,11,0.15); } }
+
+.live-bar { position: absolute; bottom: 0; left: 0; height: 3px; background: linear-gradient(90deg, #f59e0b, #ef4444, #f59e0b); background-size: 200% 100%; animation: liveBarMove 1.5s linear infinite; transition: width 0.5s; }
+@keyframes liveBarMove { 0% { background-position: 0% 0; } 100% { background-position: 200% 0; } }
+
+.live-status { font-size: 11px; color: #fcd34d; margin-top: 4px; display: flex; align-items: center; gap: 6px; }
+.live-status .dot { width: 6px; height: 6px; border-radius: 50%; background: #f59e0b; animation: blink 1s infinite; }
+@keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+.p-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; }
+.p-icon.completed { background: #065f461a; border: 1px solid #065f46; }
+.p-icon.in_progress { background: #f59e0b1a; border: 1px solid #f59e0b; }
+.p-icon.planning { background: #3b82f61a; border: 1px solid #3b82f6; }
+.p-icon.needs_attention, .p-icon.failed { background: #ef44441a; border: 1px solid #ef4444; }
+
+.p-info { flex: 1; min-width: 0; }
+.p-name { font-weight: 700; font-size: 15px; color: #f1f5f9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.p-desc { font-size: 12px; color: #64748b; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.p-meta { display: flex; gap: 16px; margin-top: 6px; font-size: 11px; color: #475569; flex-wrap: wrap; }
+.p-meta span { display: flex; align-items: center; gap: 4px; }
+
+.p-status { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+.p-status.completed { background: #065f46; color: #6ee7b7; }
+.p-status.in_progress { background: #78350f; color: #fcd34d; }
+.p-status.planning { background: #1e3a5f; color: #93c5fd; }
+.p-status.needs_attention, .p-status.failed { background: #7f1d1d; color: #fca5a5; }
+
+.p-actions { display: flex; gap: 8px; flex-shrink: 0; flex-wrap: wrap; }
+.p-actions button, .p-actions a { padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; border: 1px solid #334155; background: #0f172a; color: #94a3b8; text-decoration: none; transition: 0.2s; display: flex; align-items: center; gap: 4px; }
+.p-actions button:hover, .p-actions a:hover { border-color: #f59e0b; color: #f59e0b; }
+.p-actions .del { color: #ef4444; }
+.p-actions .del:hover { border-color: #ef4444; background: #7f1d1d33; }
+
+.empty { text-align: center; padding: 60px; color: #475569; }
+.empty .icon { font-size: 48px; margin-bottom: 12px; }
+
+/* Toast */
+.toast-container { position: fixed; top: 20px; right: 20px; z-index: 200; display: flex; flex-direction: column; gap: 8px; }
+.toast { background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 12px 18px; display: flex; align-items: center; gap: 10px; box-shadow: 0 8px 30px rgba(0,0,0,0.3); animation: slideIn 0.3s ease; min-width: 280px; }
+.toast .t-bar { width: 4px; height: 36px; border-radius: 2px; flex-shrink: 0; }
+.toast .t-title { font-size: 12px; font-weight: 700; color: #f1f5f9; }
+.toast .t-msg { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+/* Timeline Modal */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; justify-content: center; align-items: center; }
+.modal-overlay.show { display: flex; }
+.modal { background: #1e293b; border: 1px solid #334155; border-radius: 16px; max-width: 700px; width: 95%; max-height: 80vh; overflow-y: auto; padding: 24px; position: relative; }
+.modal h2 { font-size: 18px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+.modal .close { position: absolute; top: 16px; right: 20px; cursor: pointer; font-size: 24px; color: #64748b; }
+
+.timeline { position: relative; padding-left: 24px; }
+.timeline::before { content: ''; position: absolute; left: 8px; top: 0; bottom: 0; width: 2px; background: #334155; }
+.tl-item { position: relative; margin-bottom: 16px; padding-left: 20px; animation: fadeIn 0.3s ease; }
+.tl-item::before { content: ''; position: absolute; left: -20px; top: 6px; width: 10px; height: 10px; border-radius: 50%; background: #f59e0b; border: 2px solid #1e293b; }
+.tl-agent { font-weight: 700; font-size: 13px; color: #f59e0b; }
+.tl-action { font-size: 13px; color: #e2e8f0; margin-top: 2px; }
+.tl-detail { font-size: 11px; color: #64748b; margin-top: 2px; }
+.tl-time { font-size: 10px; color: #475569; margin-top: 2px; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</head>
+<body>
+
+<div class="header">
+    <h1>📦 <span>Kho Dự Án</span> — Đội Quân Tôm <span class="ws-dot off" id="wsDot" title="WebSocket"></span></h1>
+    <div class="nav">
+        <a href="/dashboard/">🎮 Lò Rèn</a>
+        <a href="/dashboard/projects.html" class="active">📦 Dự Án</a>
+        <a href="/chat.html">💬 Chat</a>
+    </div>
+</div>
+
+<div class="container">
+    <div class="stats" id="stats"></div>
+    <div class="project-list" id="projectList">
+        <div class="loading" style="text-align:center;padding:40px;color:#64748b">⏳ Đang tải danh sách dự án...</div>
+    </div>
+</div>
+
+<div class="toast-container" id="toasts"></div>
+
+<div class="modal-overlay" id="timelineModal">
+    <div class="modal">
+        <span class="close" onclick="closeTimeline()">&times;</span>
+        <h2>📋 <span id="modalTitle">Timeline Dự Án</span></h2>
+        <div class="timeline" id="timelineContent"></div>
+    </div>
+</div>
+
+<script>
+const API = 'https://bot.aiphocap.vn';
+const KEY = 'khay_vip_2026';
+let liveProjectId = null;
+let liveProjectStatus = {};
+let currentTimelineId = null;
+
+function showToast(title, msg, color) {
+    const c = document.getElementById('toasts');
+    const t = document.createElement('div');
+    t.className = 'toast';
+    t.innerHTML = '<div class="t-bar" style="background:' + (color||'#3b82f6') + '"></div><div><div class="t-title">' + title + '</div><div class="t-msg">' + msg + '</div></div>';
+    c.appendChild(t);
+    setTimeout(function(){ t.style.opacity='0'; t.style.transform='translateX(100%)'; setTimeout(function(){ t.remove(); }, 300); }, 4000);
+}
+
+let projectsCache = [];
+
+async function loadProjects() {
+    try {
+        const res = await fetch(API + '/api/projects');
+        const data = await res.json();
+        if (!data.success) return;
+        projectsCache = data.projects;
+        renderProjects();
+    } catch (e) {
+        document.getElementById('projectList').innerHTML = '<div class="empty"><div class="icon">⚠️</div>' + e.message + '</div>';
+    }
+}
+
+function renderProjects() {
+    var projects = projectsCache;
+    var total = projects.length;
+    var completed = projects.filter(function(p){ return p.status === 'completed'; }).length;
+    var inProgress = projects.filter(function(p){ return p.status === 'in_progress'; }).length;
+    var totalSize = projects.reduce(function(s, p){ return s + (p.totalSize || 0); }, 0);
+
+    document.getElementById('stats').innerHTML =
+        '<div class="stat"><div class="num">' + total + '</div><div class="lbl">Tổng dự án</div></div>' +
+        '<div class="stat"><div class="num">' + completed + '</div><div class="lbl">Hoàn thành</div></div>' +
+        '<div class="stat"><div class="num">' + inProgress + '</div><div class="lbl">Đang làm</div></div>' +
+        '<div class="stat"><div class="num">' + formatSize(totalSize) + '</div><div class="lbl">Dung lượng</div></div>';
+
+    if (projects.length === 0) {
+        document.getElementById('projectList').innerHTML = '<div class="empty"><div class="icon">📭</div>Chưa có dự án nào.<br>Hãy ra lệnh cho Đội Quân Tôm trên Dashboard hoặc Chat!</div>';
+        return;
+    }
+
+    var html = '';
+    for (var i = 0; i < projects.length; i++) {
+        var p = projects[i];
+        var date = new Date(p.createdAt);
+        var dateStr = date.getHours() + ':' + String(date.getMinutes()).padStart(2,'0') + ' ' + date.getDate() + '/' + (date.getMonth()+1) + '/' + date.getFullYear();
+        var statusLabel = { completed: '✅ Hoàn thành', in_progress: '🔄 Đang làm', planning: '📋 Lập kế hoạch', needs_attention: '⚠️ Cần xem lại', failed: '❌ Thất bại' };
+        var statusIcon = { completed: '✅', in_progress: '🔨', planning: '📋', needs_attention: '⚠️', failed: '❌' };
+        var isLive = (p.id === liveProjectId);
+
+        html += '<div class="project-card ' + (isLive ? 'live' : '') + '" id="card-' + p.id + '">';
+        if (isLive) html += '<div class="live-bar" style="width:100%"></div>';
+        html += '<div class="p-icon ' + p.status + '">' + (statusIcon[p.status] || '📁') + '</div>';
+        html += '<div class="p-info">';
+        html += '<div class="p-name">' + p.name + '</div>';
+        html += '<div class="p-desc">' + (p.description ? p.description.substring(0, 80) : '') + '</div>';
+        if (isLive && liveProjectStatus.agent) {
+            html += '<div class="live-status"><span class="dot"></span> ' + (liveProjectStatus.emoji||'🔨') + ' ' + (liveProjectStatus.agent||'') + ': ' + (liveProjectStatus.action||'Đang xử lý...') + '</div>';
+        }
+        html += '<div class="p-meta">';
+        html += '<span>🕐 ' + dateStr + '</span>';
+        html += '<span>📂 ' + (p.files ? p.files.length : 0) + ' files</span>';
+        html += '<span>💾 ' + (p.sizeFormatted || '0 B') + '</span>';
+        html += '<span>🔄 Review: ' + (p.feedbackRounds || 0) + ' vòng</span>';
+        html += '</div></div>';
+        html += '<div class="p-status ' + p.status + '">' + (statusLabel[p.status] || p.status) + '</div>';
+        html += '<div class="p-actions">';
+        html += '<button onclick="showTimeline(\'' + p.id + '\',\'' + p.name.replace(/'/g,"\\'") + '\')">📋 Timeline</button>';
+        html += '<a href="' + API + '/projects/' + p.id + '/preview/" target="_blank">👁️ Xem</a>';
+        html += '<a href="' + API + '/api/projects/' + p.id + '/download">📥 ZIP</a>';
+        html += '<button onclick="pushGithub(\'' + p.id + '\')" style="color:#60a5fa">🚀 GitHub</button>';
+        html += '<button class="del" onclick="deleteProject(\'' + p.id + '\')">🗑️</button>';
+        html += '</div></div>';
+    }
+    document.getElementById('projectList').innerHTML = html;
+}
+
+// WebSocket
+var ws = null;
+function connectWS() {
+    var wsUrl = API.replace('https://','wss://').replace('http://','ws://') + '/ws';
+    ws = new WebSocket(wsUrl);
+    ws.onopen = function() { document.getElementById('wsDot').className = 'ws-dot on'; };
+    ws.onclose = function() { document.getElementById('wsDot').className = 'ws-dot off'; setTimeout(connectWS, 3000); };
+    ws.onerror = function() {};
+    ws.onmessage = function(e) { try { handleWSEvent(JSON.parse(e.data)); } catch(err) {} };
+}
+
+function handleWSEvent(data) {
+    switch(data.type) {
+        case 'project_created':
+            showToast('📦 Dự Án Mới', data.project ? data.project.name : 'Đang tạo...', '#3b82f6');
+            liveProjectId = data.project ? data.project.id : null;
+            liveProjectStatus = { agent: 'Chỉ Huy', emoji: '🎖️', action: 'Đang lập kế hoạch...' };
+            loadProjects();
+            break;
+        case 'step':
+        case 'pipeline_step':
+            liveProjectStatus = { agent: data.agent || '', emoji: data.emoji || '🔨', action: data.action || data.status || 'Đang xử lý...' };
+            updateLiveCard();
+            if (currentTimelineId) {
+                appendTimelineItem((data.emoji||'🔨') + ' ' + (data.agent||''), data.action || data.status || '', data.output || data.detail || '');
+            }
+            break;
+        case 'project_done':
+            showToast('✅ Hoàn tất', data.report ? data.report.name : 'Dự án hoàn thành!', '#22c55e');
+            liveProjectId = null;
+            liveProjectStatus = {};
+            loadProjects();
+            break;
+        case 'code_done':
+        case 'review_passed':
+        case 'test_done':
+            loadProjects();
+            break;
+        case 'file_saved':
+            showToast('📄 File mới', data.file + ' (' + data.index + '/' + data.total + ')', '#22c55e');
+            break;
+        case 'review_score':
+            showToast('🔍 Review', 'Chấm ' + data.score + '/10', data.score >= 7 ? '#22c55e' : '#ef4444');
+            break;
+    }
+}
+
+function updateLiveCard() {
+    if (!liveProjectId) return;
+    var card = document.getElementById('card-' + liveProjectId);
+    if (!card) { loadProjects(); return; }
+    if (!card.classList.contains('live')) card.classList.add('live');
+    var liveEl = card.querySelector('.live-status');
+    if (!liveEl) {
+        var info = card.querySelector('.p-info');
+        if (info) {
+            liveEl = document.createElement('div');
+            liveEl.className = 'live-status';
+            var metaEl = info.querySelector('.p-meta');
+            if (metaEl) info.insertBefore(liveEl, metaEl);
+            else info.appendChild(liveEl);
+        }
+    }
+    if (liveEl) {
+        liveEl.innerHTML = '<span class="dot"></span> ' + (liveProjectStatus.emoji||'🔨') + ' ' + (liveProjectStatus.agent||'') + ': ' + (liveProjectStatus.action||'Đang xử lý...');
+    }
+    if (!card.querySelector('.live-bar')) {
+        var bar = document.createElement('div');
+        bar.className = 'live-bar';
+        bar.style.width = '100%';
+        card.appendChild(bar);
+    }
+}
+
+function appendTimelineItem(agent, action, detail) {
+    var container = document.getElementById('timelineContent');
+    if (!container) return;
+    var now = new Date();
+    var timeStr = now.getHours() + ':' + String(now.getMinutes()).padStart(2,'0') + ':' + String(now.getSeconds()).padStart(2,'0');
+    var item = document.createElement('div');
+    item.className = 'tl-item';
+    item.innerHTML = '<div class="tl-agent">' + agent + '</div><div class="tl-action">' + action + '</div>' + (detail ? '<div class="tl-detail">' + detail + '</div>' : '') + '<div class="tl-time">' + timeStr + '</div>';
+    container.appendChild(item);
+    item.scrollIntoView({ behavior: 'smooth', block: 'end' });
+}
+
+async function showTimeline(id, name) {
+    currentTimelineId = id;
+    document.getElementById('modalTitle').textContent = 'Timeline: ' + name;
+    document.getElementById('timelineContent').innerHTML = '<div style="text-align:center;padding:20px;color:#64748b">⏳ Đang tải...</div>';
+    document.getElementById('timelineModal').classList.add('show');
+    try {
+        var res = await fetch(API + '/api/projects/' + id + '/timeline');
+        var data = await res.json();
+        if (!data.success) { document.getElementById('timelineContent').innerHTML = 'Lỗi'; return; }
+        var html = '';
+        for (var i = 0; i < data.timeline.length; i++) {
+            var t = data.timeline[i];
+            var time = new Date(t.time);
+            var ts = time.getHours() + ':' + String(time.getMinutes()).padStart(2,'0') + ':' + String(time.getSeconds()).padStart(2,'0');
+            html += '<div class="tl-item"><div class="tl-agent">' + t.agent + '</div><div class="tl-action">' + t.action + '</div>' + (t.detail ? '<div class="tl-detail">' + t.detail + '</div>' : '') + '<div class="tl-time">' + ts + '</div></div>';
+        }
+        document.getElementById('timelineContent').innerHTML = html;
+    } catch (e) { document.getElementById('timelineContent').innerHTML = 'Lỗi: ' + e.message; }
+}
+
+function closeTimeline() { document.getElementById('timelineModal').classList.remove('show'); currentTimelineId = null; }
+document.getElementById('timelineModal').addEventListener('click', function(e) { if (e.target === e.currentTarget) closeTimeline(); });
+
+async function deleteProject(id) {
+    if (!confirm('Xóa dự án này?')) return;
+    try { await fetch(API + '/api/projects/' + id, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + KEY } }); loadProjects(); } catch (e) { alert('Lỗi: ' + e.message); }
+}
+
+function formatSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024*1024) return (bytes/1024).toFixed(1) + ' KB';
+    if (bytes < 1024*1024*1024) return (bytes/(1024*1024)).toFixed(1) + ' MB';
+    return (bytes/(1024*1024*1024)).toFixed(2) + ' GB';
+}
+
+async function pushGithub(id) {
+    var repoUrl = prompt('🚀 Nhập link GitHub repository:');
+    if (!repoUrl || !repoUrl.trim()) return;
+    var btn = event.target;
+    btn.textContent = '⏳ Đang push...'; btn.disabled = true;
+    try {
+        var res = await fetch(API + '/api/projects/' + id + '/push-github', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + KEY }, body: JSON.stringify({ repoUrl: repoUrl.trim() }) });
+        var data = await res.json();
+        if (data.success) { alert('✅ Push thành công!'); loadProjects(); } else alert('❌ ' + data.error);
+    } catch (e) { alert('❌ ' + e.message); } finally { btn.textContent = '🚀 GitHub'; btn.disabled = false; }
+}
+
+loadProjects();
+connectWS();
+</script>
+</body>
+</html>
